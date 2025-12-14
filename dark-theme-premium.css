@@ -1,0 +1,381 @@
+/* ============================================
+   PREMIUM DARK THEME
+   ============================================ */
+
+[data-theme="dark"] {
+    /* Dark Theme Colors - Premium */
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a1f2e;
+    --bg-tertiary: #252d3d;
+    --text-primary: #e8eaed;
+    --text-secondary: #b8bcc4;
+    --text-tertiary: #8a8f98;
+    --accent-primary: #4d9fff;
+    --accent-secondary: #3d8fef;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(26, 31, 46, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.15);
+}
+
+/* Dark Theme Header */
+[data-theme="dark"] .app-header {
+    background: linear-gradient(135deg,
+            rgba(15, 20, 25, 0.98) 0%,
+            rgba(26, 31, 46, 0.95) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.3),
+        0 10px 40px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .app-title {
+    background: linear-gradient(135deg, #4d9fff 0%, #3d8fef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Dark Theme Glass Cards */
+[data-theme="dark"] .glass-card {
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.95) 0%,
+            rgba(37, 45, 61, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .glass-card:hover {
+    border-color: rgba(77, 159, 255, 0.3);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        0 20px 60px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 0 1px rgba(77, 159, 255, 0.2);
+}
+
+/* Dark Theme Buttons */
+[data-theme="dark"] .icon-btn {
+    background: rgba(37, 45, 61, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+    background: rgba(77, 159, 255, 0.15);
+    border-color: rgba(77, 159, 255, 0.3);
+    color: #4d9fff;
+}
+
+[data-theme="dark"] .primary-btn {
+    background: linear-gradient(135deg, #4d9fff 0%, #3d8fef 100%);
+    box-shadow:
+        0 4px 12px rgba(77, 159, 255, 0.4),
+        0 1px 3px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .primary-btn:hover {
+    box-shadow:
+        0 6px 20px rgba(77, 159, 255, 0.5),
+        0 2px 6px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Dark Theme Toolbar */
+[data-theme="dark"] .toolbar {
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.95) 0%,
+            rgba(37, 45, 61, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .tool-btn {
+    background: rgba(37, 45, 61, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .tool-btn:hover {
+    background: linear-gradient(135deg, #4d9fff, #3d8fef);
+    color: white !important;
+    border-color: transparent;
+}
+
+[data-theme="dark"] .tool-btn:hover svg,
+[data-theme="dark"] .tool-btn:hover span {
+    color: white !important;
+}
+
+/* Dark Theme Search */
+[data-theme="dark"] .search-input {
+    background: rgba(37, 45, 61, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .search-input:focus {
+    background: rgba(37, 45, 61, 0.8);
+    border-color: #4d9fff;
+    box-shadow:
+        0 0 0 4px rgba(77, 159, 255, 0.15),
+        inset 0 2px 6px rgba(0, 0, 0, 0.2),
+        0 4px 12px rgba(77, 159, 255, 0.2);
+}
+
+/* Dark Theme Tabs */
+[data-theme="dark"] .tabs-nav {
+    background: linear-gradient(135deg,
+            rgba(15, 20, 25, 0.98) 0%,
+            rgba(26, 31, 46, 0.95) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .tab-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab-btn:hover {
+    background: rgba(77, 159, 255, 0.1);
+    border-color: rgba(77, 159, 255, 0.2);
+    color: #4d9fff;
+}
+
+[data-theme="dark"] .tab-btn.active {
+    background: linear-gradient(135deg, #4d9fff 0%, #3d8fef 100%);
+    color: white;
+    box-shadow:
+        0 4px 16px rgba(77, 159, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Dark Theme Table */
+[data-theme="dark"] .data-table {
+    background: rgba(26, 31, 46, 0.6);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .data-table th {
+    background: linear-gradient(180deg,
+            rgba(37, 45, 61, 1) 0%,
+            rgba(26, 31, 46, 1) 100%);
+    border-bottom: 2px solid rgba(77, 159, 255, 0.3);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .data-table tbody tr {
+    background: rgba(26, 31, 46, 0.4);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .data-table tbody tr:nth-child(even) {
+    background: rgba(37, 45, 61, 0.4);
+}
+
+[data-theme="dark"] .data-table tbody tr:hover {
+    background: linear-gradient(90deg,
+            rgba(77, 159, 255, 0.15) 0%,
+            rgba(77, 159, 255, 0.08) 100%);
+    box-shadow:
+        0 2px 12px rgba(77, 159, 255, 0.2),
+        inset 0 0 0 1px rgba(77, 159, 255, 0.2);
+}
+
+[data-theme="dark"] .data-table td {
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Dark Theme Stat Cards */
+[data-theme="dark"] .stat-card {
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.95) 0%,
+            rgba(37, 45, 61, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .stat-card:hover {
+    border-color: rgba(77, 159, 255, 0.3);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        0 20px 60px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .stat-label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .stat-value {
+    background: linear-gradient(135deg, #4d9fff 0%, #3d8fef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Dark Theme Modals */
+[data-theme="dark"] .modal {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .modal-content {
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.98) 0%,
+            rgba(37, 45, 61, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 40px 100px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .modal-header {
+    background: linear-gradient(180deg,
+            rgba(37, 45, 61, 0.8) 0%,
+            rgba(26, 31, 46, 0.5) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .modal-header h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-footer {
+    background: rgba(37, 45, 61, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dark Theme Input Fields */
+[data-theme="dark"] .input-field {
+    background: rgba(37, 45, 61, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .input-field:focus {
+    background: rgba(37, 45, 61, 0.8);
+    border-color: #4d9fff;
+    box-shadow: 0 0 0 3px rgba(77, 159, 255, 0.15);
+}
+
+/* Dark Theme File Tabs */
+[data-theme="dark"] .file-tabs {
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.95) 0%,
+            rgba(37, 45, 61, 0.9) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .file-tab {
+    background: rgba(37, 45, 61, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .file-tab.active {
+    background: rgba(77, 159, 255, 0.15);
+    border-color: rgba(77, 159, 255, 0.3);
+    color: #4d9fff;
+}
+
+[data-theme="dark"] .file-tab:hover {
+    background: rgba(77, 159, 255, 0.1);
+    border-color: rgba(77, 159, 255, 0.2);
+}
+
+/* Dark Theme Charts */
+[data-theme="dark"] .chart-card {
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.95) 0%,
+            rgba(37, 45, 61, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .chart-card-header {
+    background: linear-gradient(135deg,
+            rgba(37, 45, 61, 0.8) 0%,
+            rgba(26, 31, 46, 0.6) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .chart-card h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .chart-stat-label {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .chart-stat-value {
+    color: #4d9fff;
+}
+
+/* Dark Theme Scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: rgba(26, 31, 46, 0.5);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #4d9fff, #3d8fef);
+    border: 2px solid rgba(26, 31, 46, 0.5);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #3d8fef, #2d7fdf);
+}
+
+/* Dark Theme Selection */
+[data-theme="dark"] ::selection {
+    background: rgba(77, 159, 255, 0.3);
+    color: #e8eaed;
+}
+
+/* Dark Theme Secondary Button */
+[data-theme="dark"] .secondary-btn {
+    background: rgba(37, 45, 61, 0.8);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .secondary-btn:hover {
+    background: rgba(77, 159, 255, 0.15);
+    border-color: rgba(77, 159, 255, 0.3);
+    color: #4d9fff;
+}
+
+/* Dark Theme Calc Results */
+[data-theme="dark"] .calc-item {
+    background: linear-gradient(135deg,
+            rgba(37, 45, 61, 0.6) 0%,
+            rgba(26, 31, 46, 0.4) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .calc-item:hover {
+    background: linear-gradient(135deg,
+            rgba(77, 159, 255, 0.15) 0%,
+            rgba(77, 159, 255, 0.08) 100%);
+}
+
+[data-theme="dark"] .calc-item span {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .calc-item strong {
+    color: #4d9fff;
+}

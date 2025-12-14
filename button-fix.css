@@ -1,0 +1,24 @@
+/* Fix for tool button hover readability */
+.tool-btn:hover {
+    color: white !important;
+}
+
+.tool-btn:hover svg {
+    color: white !important;
+    fill: white !important;
+}
+
+.tool-btn:hover span {
+    color: white !important;
+}
+
+/* Ensure z-index for text visibility */
+.tool-btn svg,
+.tool-btn span,
+.tool-btn {
+    position: relative;
+}
+
+.tool-btn>* {
+    z-index: 2;
+}

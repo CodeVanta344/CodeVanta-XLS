@@ -1,0 +1,160 @@
+/* Light Theme Enhancements - Better visibility and contrast */
+
+/* Enhanced shadows and borders for light theme */
+[data-theme="light"] .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        0 8px 24px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .glass-card:hover {
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        0 12px 32px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Enhanced table for light theme */
+[data-theme="light"] .data-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .data-table th {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #1a1a1a;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+[data-theme="light"] .data-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+[data-theme="light"] .data-table tbody tr:hover {
+    background: #f0f7ff;
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+}
+
+[data-theme="light"] .data-table td {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Enhanced stat cards */
+[data-theme="light"] .stat-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.06),
+        0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.08),
+        0 8px 24px rgba(0, 0, 0, 0.06);
+    border-color: #0066cc;
+}
+
+[data-theme="light"] .stat-label {
+    color: #495057;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+[data-theme="light"] .stat-value {
+    color: #0066cc;
+}
+
+/* Enhanced toolbar */
+[data-theme="light"] .toolbar {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Enhanced tool buttons */
+[data-theme="light"] .tool-btn {
+    background: white;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .tool-btn:hover {
+    background: #0066cc;
+    border-color: #0066cc;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+/* Enhanced search bar */
+[data-theme="light"] .search-input {
+    background: white;
+    border: 1px solid #dee2e6;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .search-input:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.15);
+}
+
+/* Enhanced modals */
+[data-theme="light"] .modal-content {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 16px 64px rgba(0, 0, 0, 0.08);
+}
+
+/* Enhanced file tabs */
+[data-theme="light"] .file-tab {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+[data-theme="light"] .file-tab:hover {
+    background: white;
+    border-color: #0066cc;
+}
+
+[data-theme="light"] .file-tab.active {
+    background: white;
+    border-top: 2px solid #0066cc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Enhanced tabs navigation */
+[data-theme="light"] .tabs-nav {
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .tab-btn {
+    color: #495057;
+    font-weight: 600;
+}
+
+[data-theme="light"] .tab-btn:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+[data-theme="light"] .tab-btn.active {
+    background: linear-gradient(135deg, #0066cc, #0052a3);
+    color: white;
+    box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}

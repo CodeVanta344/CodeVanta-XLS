@@ -1,0 +1,63 @@
+{
+  "name": "excelflow",
+  "productName": "ExcelFlow",
+  "version": "1.0.0",
+  "description": "Application moderne pour visualiser et manipuler des données Excel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "excel",
+    "data",
+    "visualization"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.codevanta.xls",
+    "productName": "CodeVanta-XLS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!dist/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "logo.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "logo.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "logo.png"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CodeVanta344",
+        "repo": "CodeVanta-XLS"
+      }
+    ]
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.5.0",
+    "chokidar": "^5.0.0",
+    "electron-store": "^11.0.2",
+    "electron-updater": "^6.6.2",
+    "xlsx": "^0.18.5"
+  }
+}

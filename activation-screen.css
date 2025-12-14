@@ -1,0 +1,295 @@
+/* License Activation Screen Styles */
+
+.activation-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.activation-container {
+    width: 100%;
+    max-width: 500px;
+    background: linear-gradient(135deg,
+            rgba(26, 31, 46, 0.95) 0%,
+            rgba(37, 45, 61, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 48px 40px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 40px 100px rgba(0, 0, 0, 0.4);
+    text-align: center;
+}
+
+.activation-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, #4d9fff, #3d8fef);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    box-shadow: 0 8px 24px rgba(77, 159, 255, 0.4);
+}
+
+.activation-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #e8eaed;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #e8eaed 0%, #b8bcc4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.activation-subtitle {
+    font-size: 15px;
+    color: #8a8f98;
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.activation-form {
+    margin-bottom: 24px;
+}
+
+.license-input-group {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.license-input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: #6c757d;
+}
+
+.license-key-input {
+    width: 100%;
+    padding: 16px 16px 16px 52px;
+    background: rgba(37, 45, 61, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #e8eaed;
+    text-align: center;
+    letter-spacing: 2px;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+.license-key-input::placeholder {
+    color: #6c757d;
+    letter-spacing: 1px;
+    font-weight: 400;
+}
+
+.license-key-input:focus {
+    outline: none;
+    border-color: #4d9fff;
+    background: rgba(37, 45, 61, 0.8);
+    box-shadow: 0 0 0 4px rgba(77, 159, 255, 0.15);
+}
+
+.activate-btn {
+    width: 100%;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #4d9fff 0%, #3d8fef 100%);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(77, 159, 255, 0.4);
+}
+
+.activate-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(77, 159, 255, 0.5);
+}
+
+.activate-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.activate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.activation-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #fca5a5;
+    font-size: 14px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.activation-error::before {
+    content: '⚠';
+    font-size: 18px;
+}
+
+.activation-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 32px 0;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.activation-divider::before,
+.activation-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.activation-help {
+    text-align: center;
+}
+
+.activation-help-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #b8bcc4;
+    margin-bottom: 12px;
+}
+
+.activation-help-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.activation-help-link {
+    color: #4d9fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.activation-help-link:hover {
+    color: #6eb5ff;
+    text-decoration: underline;
+}
+
+.activation-features {
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activation-features-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #b8bcc4;
+    margin-bottom: 16px;
+}
+
+.activation-features-list {
+    display: grid;
+    gap: 12px;
+    text-align: left;
+}
+
+.activation-feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #8a8f98;
+    font-size: 13px;
+}
+
+.activation-feature-icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(77, 159, 255, 0.15);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4d9fff;
+    flex-shrink: 0;
+}
+
+/* Light theme activation screen */
+[data-theme="light"] .activation-screen {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+[data-theme="light"] .activation-container {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.1),
+        0 40px 100px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .activation-title {
+    color: #1a1a1a;
+    background: linear-gradient(135deg, #1a1a1a 0%, #495057 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .activation-subtitle {
+    color: #6c757d;
+}
+
+[data-theme="light"] .license-key-input {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    color: #1a1a1a;
+}
+
+[data-theme="light"] .license-key-input:focus {
+    background: white;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+}
+
+[data-theme="light"] .activation-divider::before,
+[data-theme="light"] .activation-divider::after {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .activation-help-title,
+[data-theme="light"] .activation-features-title {
+    color: #495057;
+}
+
+[data-theme="light"] .activation-feature {
+    color: #6c757d;
+}
+
+[data-theme="light"] .activation-feature-icon {
+    background: rgba(0, 102, 204, 0.1);
+    color: #0066cc;
+}

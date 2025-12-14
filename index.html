@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeVanta-XLS - Visualisation et Automatisation de Données</title>
+    <meta name="description" content="Application moderne pour visualiser et manipuler vos données Excel avec élégance">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="file-tabs.css">
+    <link rel="stylesheet" href="tabs-premium.css">
+    <link rel="stylesheet" href="light-theme-enhanced.css">
+    <link rel="stylesheet" href="dark-theme-premium.css">
+    <link rel="stylesheet" href="modal-enhancements.css">
+    <link rel="stylesheet" href="charts-enhanced.css">
+    <link rel="stylesheet" href="premium-ui.css">
+    <link rel="stylesheet" href="feedback-ui.css">
+    <link rel="stylesheet" href="button-fix.css">
+    <link rel="stylesheet" href="matte-finish.css">
+    <link rel="stylesheet" href="dark-charts-fix.css">
+    <link rel="stylesheet" href="activation-screen.css">
+
+    <!-- Libraries -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Global Error Handler -->
+    <script>
+        window.onerror = function (message, source, lineno, colno, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.width = '100%';
+            errorDiv.style.backgroundColor = '#ff3b30';
+            errorDiv.style.color = 'white';
+            errorDiv.style.padding = '10px';
+            errorDiv.style.zIndex = '999999';
+            errorDiv.style.fontFamily = 'monospace';
+            errorDiv.style.fontSize = '12px';
+            errorDiv.innerText = `Global Error: ${message}\nSource: ${source}:${lineno}:${colno}`;
+            document.body.appendChild(errorDiv);
+            console.error('Global Error:', message, error);
+            return false;
+        };
+    </script>
+    <!-- Activation Screen -->
+    <div id="activation-screen" class="activation-screen">
+        <div class="activation-container">
+            <div class="activation-logo">🔑</div>
+            <h1 class="activation-title">CodeVanta-XLS</h1>
+            <p class="activation-subtitle">
+                Activez votre licence pour accéder à toutes les fonctionnalités premium
+            </p>
+
+            <form id="activation-form" class="activation-form">
+                <div class="license-input-group">
+                    <span class="license-input-icon">🔐</span>
+                    <input type="text" id="license-key-input" class="license-key-input"
+                        placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" required autofocus>
+                </div>
+                <button type="submit" id="activate-btn" class="activate-btn">
+                    Activer la licence
+                </button>
+                <div id="activation-error" class="activation-error hidden"></div>
+            </form>
+
+            <div class="activation-divider">Besoin d'aide ?</div>
+
+            <div class="activation-help">
+                <div class="activation-help-title">Où obtenir une clé ?</div>
+                <div class="activation-help-links">
+                    <a href="#" class="activation-help-link"
+                        onclick="window.electronAPI.openExternal('https://www.codevanta.ovh/login/'); return false;">
+                        🛒 Acheter une licence
+                    </a>
+                    <a href="#" class="activation-help-link"
+                        onclick="window.electronAPI.openExternal('https://www.codevanta.ovh/contact/'); return false;">
+                        💬 Contacter le support
+                    </a>
+                </div>
+            </div>
+
+            <div class="activation-features">
+                <div class="activation-features-title">Fonctionnalités incluses</div>
+                <div class="activation-features-list">
+                    <div class="activation-feature">
+                        <div class="activation-feature-icon">✓</div>
+                        <span>Import illimité de fichiers Excel</span>
+                    </div>
+                    <div class="activation-feature">
+                        <div class="activation-feature-icon">✓</div>
+                        <span>Graphiques automatiques avancés</span>
+                    </div>
+                    <div class="activation-feature">
+                        <div class="activation-feature-icon">✓</div>
+                        <span>Dashboard en temps réel</span>
+                    </div>
+                    <div class="activation-feature">
+                        <div class="activation-feature-icon">✓</div>
+                        <span>Mises à jour gratuites</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app">
+        <!-- Splash Screen -->
+        <div id="splash-screen" class="splash-screen" style="display: none;">
+            <div class="splash-content">
+                <div class="logo-container">
+                    <img src="logo.png" alt="ExcelFlow Logo" class="splash-logo">
+                </div>
+                <h1 class="splash-title">CodeVanta-XLS</h1>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+                <p class="splash-subtitle">Chargement de votre espace de travail...</p>
+            </div>
+        </div>
+
+        <!-- Main Application -->
+        <div id="app" class="app">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="logo-section">
+                        <img src="logo.png" alt="ExcelFlow" class="app-logo">
+                        <h1 class="app-title">CodeVanta-XLS</h1>
+                    </div>
+                    <div class="header-actions">
+                        <button id="theme-toggle" class="icon-btn" title="Changer de thème">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M10 2.5V4.5M10 15.5V17.5M4.5 10H2.5M17.5 10H15.5M15.3 15.3L13.9 13.9M15.3 4.7L13.9 6.1M4.7 15.3L6.1 13.9M4.7 4.7L6.1 6.1"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                            <button id="reset-license-btn" class="icon-btn" title="Réinitialiser la licence"
+                                onclick="window.licenseManager.deactivateLicense()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </button>
+                            <button id="export-btn" class="primary-btn" disabled>
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path
+                                        d="M9 12V3M9 3L6 6M9 3L12 6M3 12V14C3 14.5304 3.21071 15.0391 3.58579 15.4142C3.96086 15.7893 4.46957 16 5 16H13C13.5304 16 14.0391 15.7893 14.4142 15.4142C14.7893 15.0391 15 14.5304 15 14V12"
+                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                Exporter
+                            </button>
+                            <!-- Window Controls -->
+                            <div class="window-controls">
+                                <button id="minimize-btn" class="window-btn" title="Réduire">
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" stroke-width="1.5" />
+                                    </svg>
+                                </button>
+                                <button id="maximize-btn" class="window-btn" title="Agrandir">
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <rect x="2" y="2" width="8" height="8" stroke="currentColor" stroke-width="1.5"
+                                            fill="none" />
+                                    </svg>
+                                </button>
+                                <button id="close-btn" class="window-btn close" title="Fermer">
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" />
+                                    </svg>
+                                </button>
+                            </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tabs Navigation -->
+            <nav class="tabs-nav">
+                <button class="tab-btn active" data-tab="data">📊 Données</button>
+                <button class="tab-btn" data-tab="charts">📈 Graphiques</button>
+                <button class="tab-btn" data-tab="dashboard">🏠 Dashboard</button>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="app-main">
+                <!-- Dashboard Section -->
+                <section id="dashboard-section" class="dashboard-section hidden">
+                    <!-- Folder Info -->
+                    <div class="folder-info glass-card">
+                        <div class="folder-icon">📁</div>
+                        <div class="folder-details">
+                            <div class="folder-label">Dossier surveillé:</div>
+                            <div id="current-folder-path" class="folder-path">-</div>
+                        </div>
+                        <button id="change-folder-btn" class="secondary-btn">Changer</button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card glass-card">
+                            <div class="stat-label">Fichiers importés</div>
+                            <div id="stat-total-files" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-label">Total de lignes</div>
+                            <div id="stat-total-rows" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-label">Dernier import</div>
+                            <div id="stat-last-import" class="stat-value">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Files Chart -->
+                    <div class="chart-container glass-card">
+                        <h3>Fichiers importés</h3>
+                        <div class="chart-wrapper" style="height: 300px;">
+                            <canvas id="files-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Files List -->
+                    <div class="files-container glass-card">
+                        <h3>Liste des fichiers</h3>
+                        <div id="files-list" class="files-list"></div>
+                    </div>
+                </section>
+
+                <!-- Import Section -->
+                <section id="import-section" class="import-section hidden">
+                    <div class="import-card glass-card">
+                        <div class="import-icon">
+                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" stroke-width="2"
+                                    fill="none" />
+                                <line x1="20" y1="20" x2="44" y2="20" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <line x1="20" y1="28" x2="44" y2="28" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <line x1="20" y1="36" x2="36" y2="36" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <h2 class="import-title">Importer vos données</h2>
+                        <p class="import-description">Glissez-déposez votre fichier Excel ou cliquez pour sélectionner
+                        </p>
+                        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
+                        <button id="import-btn" class="import-btn">
+                            Sélectionner un fichier
+                        </button>
+                        <p class="import-formats">Formats supportés: .xlsx, .xls, .csv</p>
+                    </div>
+                </section>
+
+                <!-- Data Section -->
+                <section id="data-section" class="data-section hidden">
+                    <!-- Toolbar -->
+                    <div class="toolbar glass-card">
+                        <div class="toolbar-group">
+                            <button id="sort-btn" class="tool-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M3 6H15M5 10H13M7 14H11" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Trier
+                            </button>
+                            <button id="filter-btn" class="tool-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M3 4H15L10 10V14L8 15V10L3 4Z" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Filtrer
+                            </button>
+                            <button id="calculate-btn" class="tool-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <rect x="3" y="3" width="12" height="12" rx="2" stroke="currentColor"
+                                        stroke-width="1.5" />
+                                    <path d="M6 6H12M6 9H12M6 12H9" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Calculer
+                            </button>
+                        </div>
+
+                        <!-- Search Bar -->
+                        <div class="search-container">
+                            <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M12 12L16 16" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <input type="text" id="search-input" class="search-input"
+                                placeholder="Rechercher dans les données...">
+                            <button id="clear-search" class="clear-search-btn" style="display: none;">×</button>
+                        </div>
+
+                        <div class="toolbar-group">
+                            <div class="zoom-controls">
+                                <button id="zoom-out-btn" class="zoom-btn" title="Dézoomer (Ctrl -)">
+                                    −
+                                </button>
+                                <input type="text" id="zoom-level"
+                                    class="zoom-label text-center bg-transparent border-none w-16 focus:ring-1 focus:ring-accent"
+                                    value="100%"></input>
+                                <button id="zoom-in-btn" class="zoom-btn" title="Zoomer (Ctrl +)">
+                                    +
+                                </button>
+                                <button id="zoom-reset-btn" class="zoom-btn" title="Réinitialiser (Ctrl 0)">
+                                    ⟲
+                                </button>
+                            </div>
+                            <button id="chart-btn" class="tool-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M3 14V8M7 14V4M11 14V10M15 14V6" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Graphique
+                            </button>
+                            <button id="new-file-btn" class="tool-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M9 4V14M4 9H14" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Nouveau
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="table-container glass-card">
+                        <div id="active-filters-container" class="active-filters-container hidden"
+                            style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <!-- Active filters will be inserted here -->
+                        </div>
+                        <div class="table-wrapper">
+                            <div class="zoom-container">
+                                <table id="data-table" class="data-table">
+                                    <thead id="table-head"></thead>
+                                    <tbody id="table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card glass-card">
+                            <div class="stat-label">Lignes</div>
+                            <div id="stat-rows" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-label">Colonnes</div>
+                            <div id="stat-cols" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-label">Cellules</div>
+                            <div id="stat-cells" class="stat-value">0</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section id="charts-section" class="charts-section hidden">
+                    <div class="charts-header glass-card">
+                        <div class="charts-header-content">
+                            <div class="charts-title-section">
+                                <h2>📈 Graphiques Automatiques</h2>
+                                <p class="charts-description">Visualisations générées automatiquement à partir de vos
+                                    données numériques</p>
+                            </div>
+                            <div class="charts-controls">
+                                <div class="charts-search">
+                                    <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                        <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" />
+                                        <path d="M12 12L16 16" stroke="currentColor" stroke-width="1.5"
+                                            stroke-linecap="round" />
+                                    </svg>
+                                    <input type="text" id="charts-search" class="charts-search-input"
+                                        placeholder="Rechercher un graphique...">
+                                </div>
+                                <select id="charts-sort" class="charts-sort-select">
+                                    <option value="name-asc">📝 Nom (A → Z)</option>
+                                    <option value="name-desc">📝 Nom (Z → A)</option>
+                                    <option value="avg-desc">📊 Moyenne (↓ Élevée)</option>
+                                    <option value="avg-asc">📊 Moyenne (↑ Faible)</option>
+                                    <option value="sum-desc">➕ Somme (↓ Élevée)</option>
+                                    <option value="sum-asc">➕ Somme (↑ Faible)</option>
+                                    <option value="max-desc">⬆️ Maximum (↓ Élevé)</option>
+                                    <option value="max-asc">⬆️ Maximum (↑ Faible)</option>
+                                    <option value="min-desc">⬇️ Minimum (↓ Élevé)</option>
+                                    <option value="min-asc">⬇️ Minimum (↑ Faible)</option>
+                                    <option value="count-desc">🔢 Nombre (↓ Plus)</option>
+                                    <option value="count-asc">🔢 Nombre (↑ Moins)</option>
+                                    <option value="range-desc">📏 Plage (↓ Large)</option>
+                                    <option value="range-asc">📏 Plage (↑ Étroite)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div id="auto-charts-container"></div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Modals -->
+        <!-- Sort Modal -->
+        <div id="sort-modal" class="modal hidden">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Trier les données</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label for="sort-column">Colonne</label>
+                    <select id="sort-column" class="input-field"></select>
+                    <label for="sort-order">Ordre</label>
+                    <select id="sort-order" class="input-field">
+                        <option value="asc">Croissant</option>
+                        <option value="desc">Décroissant</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn close-modal">Annuler</button>
+                    <button id="apply-sort" class="primary-btn">Appliquer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Modal -->
+        <div id="filter-modal" class="modal hidden">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Filtrer les données</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label for="filter-column">Colonne</label>
+                    <select id="filter-column" class="input-field"></select>
+                    <label for="filter-value">Valeur</label>
+                    <input type="text" id="filter-value" class="input-field" placeholder="Entrez une valeur...">
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn close-modal">Annuler</button>
+                    <button id="apply-filter" class="primary-btn">Appliquer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculate Modal -->
+        <div id="calculate-modal" class="modal hidden">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Calculs automatiques</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label for="calc-column">Colonne</label>
+                    <select id="calc-column" class="input-field"></select>
+                    <div class="calc-results">
+                        <div class="calc-item">
+                            <span>Somme:</span>
+                            <strong id="calc-sum">-</strong>
+                        </div>
+                        <div class="calc-item">
+                            <span>Moyenne:</span>
+                            <strong id="calc-avg">-</strong>
+                        </div>
+                        <div class="calc-item">
+                            <span>Minimum:</span>
+                            <strong id="calc-min">-</strong>
+                        </div>
+                        <div class="calc-item">
+                            <span>Maximum:</span>
+                            <strong id="calc-max">-</strong>
+                        </div>
+                        <div class="calc-item">
+                            <span>Compte:</span>
+                            <strong id="calc-count">-</strong>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Chart Modal -->
+        <div id="chart-modal" class="modal hidden">
+            <div class="modal-content glass-card chart-modal-content">
+                <div class="modal-header">
+                    <h3>Graphique</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-controls">
+                        <div class="control-group">
+                            <label for="chart-type">Type</label>
+                            <select id="chart-type" class="input-field">
+                                <option value="bar">Barres</option>
+                                <option value="line">Courbes</option>
+                                <option value="pie">Camembert</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="chart-x">Axe X</label>
+                            <select id="chart-x" class="input-field"></select>
+                        </div>
+                        <div class="control-group">
+                            <label for="chart-y">Axe Y</label>
+                            <select id="chart-y" class="input-field"></select>
+                        </div>
+                        <button id="generate-chart" class="primary-btn">Générer</button>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Folder Selection Modal -->
+        <div id="folder-selection-modal" class="modal hidden">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Sélectionner un dossier</h3>
+                </div>
+                <div class="modal-body">
+                    <p>Choisissez le dossier contenant vos fichiers Excel.</p>
+                    <p>L'application surveillera automatiquement ce dossier et importera tous les fichiers .xlsx qu'il
+                        contient.</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="select-folder-btn" class="primary-btn">Choisir un dossier</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card glass-card">
+                <div class="stat-label">Lignes</div>
+                <div id="stat-rows" class="stat-value">0</div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-label">Colonnes</div>
+                <div id="stat-cols" class="stat-value">0</div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-label">Cellules</div>
+                <div id="stat-cells" class="stat-value">0</div>
+            </div>
+        </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section id="charts-section" class="charts-section hidden">
+            <div class="charts-header glass-card">
+                <div class="charts-header-content">
+                    <div class="charts-title-section">
+                        <h2>📈 Graphiques Automatiques</h2>
+                        <p class="charts-description">Visualisations générées automatiquement à partir de vos
+                            données numériques</p>
+                    </div>
+                    <div class="charts-controls">
+                        <div class="charts-search">
+                            <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M12 12L16 16" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <input type="text" id="charts-search" class="charts-search-input"
+                                placeholder="Rechercher un graphique...">
+                        </div>
+                        <select id="charts-sort" class="charts-sort-select">
+                            <option value="name-asc">📝 Nom (A → Z)</option>
+                            <option value="name-desc">📝 Nom (Z → A)</option>
+                            <option value="avg-desc">📊 Moyenne (↓ Élevée)</option>
+                            <option value="avg-asc">📊 Moyenne (↑ Faible)</option>
+                            <option value="sum-desc">➕ Somme (↓ Élevée)</option>
+                            <option value="sum-asc">➕ Somme (↑ Faible)</option>
+                            <option value="max-desc">⬆️ Maximum (↓ Élevé)</option>
+                            <option value="max-asc">⬆️ Maximum (↑ Faible)</option>
+                            <option value="min-desc">⬇️ Minimum (↓ Élevé)</option>
+                            <option value="min-asc">⬇️ Minimum (↑ Faible)</option>
+                            <option value="count-desc">🔢 Nombre (↓ Plus)</option>
+                            <option value="count-asc">🔢 Nombre (↑ Moins)</option>
+                            <option value="range-desc">📏 Plage (↓ Large)</option>
+                            <option value="range-asc">📏 Plage (↑ Étroite)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div id="auto-charts-container"></div>
+            </div>
+        </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Sort Modal -->
+    <div id="sort-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Trier les données</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="sort-column">Colonne</label>
+                <select id="sort-column" class="input-field"></select>
+                <label for="sort-order">Ordre</label>
+                <select id="sort-order" class="input-field">
+                    <option value="asc">Croissant</option>
+                    <option value="desc">Décroissant</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn close-modal">Annuler</button>
+                <button id="apply-sort" class="primary-btn">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div id="filter-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Filtrer les données</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="filter-column">Colonne</label>
+                <select id="filter-column" class="input-field"></select>
+                <label for="filter-value">Valeur</label>
+                <input type="text" id="filter-value" class="input-field" placeholder="Entrez une valeur...">
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn close-modal">Annuler</button>
+                <button id="apply-filter" class="primary-btn">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculate Modal -->
+    <div id="calculate-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Calculs automatiques</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="calc-column">Colonne</label>
+                <select id="calc-column" class="input-field"></select>
+                <div class="calc-results">
+                    <div class="calc-item">
+                        <span>Somme:</span>
+                        <strong id="calc-sum">-</strong>
+                    </div>
+                    <div class="calc-item">
+                        <span>Moyenne:</span>
+                        <strong id="calc-avg">-</strong>
+                    </div>
+                    <div class="calc-item">
+                        <span>Minimum:</span>
+                        <strong id="calc-min">-</strong>
+                    </div>
+                    <div class="calc-item">
+                        <span>Maximum:</span>
+                        <strong id="calc-max">-</strong>
+                    </div>
+                    <div class="calc-item">
+                        <span>Compte:</span>
+                        <strong id="calc-count">-</strong>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Chart Modal -->
+    <div id="chart-modal" class="modal hidden">
+        <div class="modal-content glass-card chart-modal-content">
+            <div class="modal-header">
+                <h3>Graphique</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="chart-controls">
+                    <div class="control-group">
+                        <label for="chart-type">Type</label>
+                        <select id="chart-type" class="input-field">
+                            <option value="bar">Barres</option>
+                            <option value="line">Courbes</option>
+                            <option value="pie">Camembert</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="chart-x">Axe X</label>
+                        <select id="chart-x" class="input-field"></select>
+                    </div>
+                    <div class="control-group">
+                        <label for="chart-y">Axe Y</label>
+                        <select id="chart-y" class="input-field"></select>
+                    </div>
+                    <button id="generate-chart" class="primary-btn">Générer</button>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Selection Modal -->
+    <div id="folder-selection-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Sélectionner un dossier</h3>
+            </div>
+            <div class="modal-body">
+                <p>Choisissez le dossier contenant vos fichiers Excel.</p>
+                <p>L'application surveillera automatiquement ce dossier et importera tous les fichiers .xlsx qu'il
+                    contient.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="select-folder-btn" class="primary-btn">Choisir un dossier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Notification Modal -->
+    <div id="update-modal" class="modal hidden">
+        <div class="modal-content glass-card" style="text-align: center; padding: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎁</div>
+            <h3 style="margin-bottom: 1rem;">Mise à jour disponible !</h3>
+            <p id="update-message" style="margin-bottom: 2rem; color: var(--text-secondary);">
+                Une nouvelle version est prête à être téléchargée.
+            </p>
+            <div id="update-actions">
+                <button id="restart-btn" class="primary-btn"
+                    style="width: 100%; justify-content: center; display: none;">
+                    Redémarrer pour installer
+                </button>
+                <div id="download-progress" style="display: none; margin-top: 1rem;">
+                    <p style="font-size: 0.875rem; color: var(--text-tertiary); margin-bottom: 0.5rem;">Téléchargement
+                        en cours...</p>
+                    <div style="width: 100%; height: 4px; background: var(--bg-tertiary); border-radius: 2px;">
+                        <div class="loading-progress"
+                            style="width: 0%; transition: width 0.3s; background: var(--accent-primary);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="license-manager.js"></script>
+
+    <script src="dashboardController.js"></script>
+    <script src="./node_modules/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="tabs-charts.js"></script>
+    <script src="file-tabs.js"></script>
+    <script src="app.js"></script>
+    <script src="feedback-ui.js"></script>
+</body>
+
+</html>

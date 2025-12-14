@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Génération de Licences CodeVanta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f7ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .license-key {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+            text-align: center;
+            letter-spacing: 3px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .copy-btn {
+            background: #4CAF50;
+            margin-top: 10px;
+        }
+
+        .error {
+            background: #fee;
+            border-left-color: #f44;
+            color: #c33;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔑 Générer une Licence</h1>
+
+        <form id="licenseForm">
+            <div class="form-group">
+                <label>Email du client *</label>
+                <input type="email" id="email" required placeholder="client@example.com">
+            </div>
+
+            <div class="form-group">
+                <label>Plan</label>
+                <select id="plan">
+                    <option value="standard">Standard (1 activation)</option>
+                    <option value="pro">Pro (3 activations)</option>
+                    <option value="enterprise">Enterprise (10 activations)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Durée (jours)</label>
+                <input type="number" id="duration" placeholder="365 (vide = illimité)">
+            </div>
+
+            <button type="submit" id="generateBtn">Générer la Licence</button>
+        </form>
+
+        <div class="result" id="result">
+            <h3>✅ Licence générée avec succès !</h3>
+            <div class="license-key" id="licenseKey"></div>
+            <button class="copy-btn" onclick="copyLicense()">📋 Copier la clé</button>
+            <p style="margin-top: 15px; color: #666; font-size: 14px;" id="resultMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://lbdmjbqwqfnbgvjlpzxv.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiZG1qYnF3cWZuYmd2amxwenhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM5NDU5NzAsImV4cCI6MjA0OTUyMTk3MH0.VYxLqE-VJkHVdKGPXqN5gD_EqnSMXqIYqPKWLqSqKvs'
+
+        document.getElementById('licenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+
+            const email = document.getElementById('email').value
+            const plan = document.getElementById('plan').value
+            const duration = document.getElementById('duration').value || null
+            const btn = document.getElementById('generateBtn')
+
+            btn.disabled = true
+            btn.textContent = 'Génération en cours...'
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-license`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({ email, plan, duration })
+                })
+
+                const data = await response.json()
+
+                if (data.success) {
+                    document.getElementById('licenseKey').textContent = data.license.key
+                    document.getElementById('resultMessage').textContent =
+                        `Email: ${data.license.email} | Plan: ${data.license.plan}`
+                    document.getElementById('result').classList.add('show')
+                    document.getElementById('result').classList.remove('error')
+
+                    // Reset form
+                    e.target.reset()
+                } else {
+                    alert('Erreur: ' + data.error)
+                }
+            } catch (error) {
+                alert('Erreur de connexion: ' + error.message)
+            } finally {
+                btn.disabled = false
+                btn.textContent = 'Générer la Licence'
+            }
+        })
+
+        function copyLicense() {
+            const key = document.getElementById('licenseKey').textContent
+            navigator.clipboard.writeText(key)
+            alert('✅ Clé copiée dans le presse-papier !')
+        }
+    </script>
+</body>
+
+</html>

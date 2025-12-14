@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Génération de Licences CodeVanta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f7ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .license-key {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+            text-align: center;
+            letter-spacing: 3px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .copy-btn {
+            background: #4CAF50;
+            margin-top: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .error {
+            background: #fee;
+            border-left-color: #f44;
+            color: #c33;
+        }
+
+        .success {
+            background: #efe;
+            border-left-color: #4c4;
+            color: #363;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 CodeVanta License Manager</h1>
+            <p>Système de gestion de licences</p>
+        </div>
+
+        <div class="grid">
+            <!-- Génération de licence -->
+            <div class="card">
+                <h2>Générer une Licence</h2>
+
+                <form id="licenseForm">
+                    <div class="form-group">
+                        <label>Email du client *</label>
+                        <input type="email" id="email" required placeholder="client@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Plan</label>
+                        <select id="plan">
+                            <option value="standard">Standard (1 activation)</option>
+                            <option value="pro">Pro (3 activations)</option>
+                            <option value="enterprise">Enterprise (10 activations)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Durée (jours)</label>
+                        <input type="number" id="duration" placeholder="365 (vide = illimité)">
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="sendEmail" checked>
+                        <label for="sendEmail" style="margin: 0;">Envoyer l'email au client</label>
+                    </div>
+
+                    <button type="submit" id="generateBtn">Générer la Licence</button>
+                </form>
+
+                <div class="result" id="result">
+                    <h3>✅ Licence générée avec succès !</h3>
+                    <div class="license-key" id="licenseKey"></div>
+                    <button class="copy-btn" onclick="copyLicense()">📋 Copier la clé</button>
+                    <p style="margin-top: 15px; color: #666; font-size: 14px;" id="resultMessage"></p>
+                </div>
+            </div>
+
+            <!-- Vérification de licence -->
+            <div class="card">
+                <h2>Vérifier une Licence</h2>
+
+                <form id="verifyForm">
+                    <div class="form-group">
+                        <label>Clé de licence</label>
+                        <input type="text" id="verifyKey" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19">
+                    </div>
+
+                    <button type="submit" id="verifyBtn">Vérifier</button>
+                </form>
+
+                <div class="result" id="verifyResult"></div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="card">
+            <h2>Statistiques</h2>
+            <div class="stats" id="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalLicenses">-</div>
+                    <div class="stat-label">Total Licences</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="activeLicenses">-</div>
+                    <div class="stat-label">Actives</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="expiredLicenses">-</div>
+                    <div class="stat-label">Expirées</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load stats on page load
+        loadStats();
+
+        // Generate license form
+        document.getElementById('licenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const plan = document.getElementById('plan').value;
+            const duration = document.getElementById('duration').value || null;
+            const sendEmail = document.getElementById('sendEmail').checked;
+            const btn = document.getElementById('generateBtn');
+
+            btn.disabled = true;
+            btn.textContent = 'Génération en cours...';
+
+            try {
+                const response = await fetch('/api/generate-license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, plan, duration, sendEmail })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('licenseKey').textContent = data.license.key;
+                    document.getElementById('resultMessage').textContent =
+                        sendEmail ? 'Email envoyé au client avec la clé de licence.' : 'Clé générée (email non envoyé).';
+                    document.getElementById('result').classList.add('show');
+                    document.getElementById('result').classList.remove('error');
+                    document.getElementById('result').classList.add('success');
+
+                    // Reset form
+                    e.target.reset();
+                    document.getElementById('sendEmail').checked = true;
+
+                    // Reload stats
+                    loadStats();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            } catch (error) {
+                alert('Erreur de connexion au serveur');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Générer la Licence';
+            }
+        });
+
+        // Verify license form
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const key = document.getElementById('verifyKey').value;
+            const btn = document.getElementById('verifyBtn');
+            const resultDiv = document.getElementById('verifyResult');
+
+            btn.disabled = true;
+            btn.textContent = 'Vérification...';
+
+            try {
+                const response = await fetch(`/api/license/${key}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const expiryText = data.expires_at
+                        ? `Expire le: ${new Date(data.expires_at).toLocaleDateString('fr-FR')}`
+                        : 'Licence à vie';
+
+                    resultDiv.innerHTML = `
+                        <h3>✅ Licence valide</h3>
+                        <p><strong>Email:</strong> ${data.email}</p>
+                        <p><strong>Plan:</strong> ${data.plan.toUpperCase()}</p>
+                        <p><strong>Statut:</strong> ${data.status}</p>
+                        <p><strong>Activations:</strong> ${data.activation_count} / ${data.max_activations}</p>
+                        <p><strong>Expiration:</strong> ${expiryText}</p>
+                    `;
+                    resultDiv.classList.remove('error');
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.innerHTML = '<h3>❌ Licence non trouvée</h3>';
+                    resultDiv.classList.remove('success');
+                    resultDiv.classList.add('error');
+                }
+
+                resultDiv.classList.add('show');
+            } catch (error) {
+                alert('Erreur de connexion');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Vérifier';
+            }
+        });
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                document.getElementById('totalLicenses').textContent = data.total || 0;
+                document.getElementById('activeLicenses').textContent = data.active || 0;
+                document.getElementById('expiredLicenses').textContent = data.expired || 0;
+            } catch (error) {
+                console.error('Failed to load stats');
+            }
+        }
+
+        // Copy license to clipboard
+        function copyLicense() {
+            const key = document.getElementById('licenseKey').textContent;
+            navigator.clipboard.writeText(key);
+            alert('✅ Clé copiée dans le presse-papier !');
+        }
+
+        // Auto-format license key input
+        document.getElementById('verifyKey').addEventListener('input', (e) => {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            let formatted = '';
+
+            for (let i = 0; i < value.length && i < 16; i++) {
+                if (i > 0 && i % 4 === 0) formatted += '-';
+                formatted += value[i];
+            }
+
+            e.target.value = formatted;
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+/* Dark Theme Chart Improvements */
+
+/* Transparent canvas background in dark mode */
+[data-theme="dark"] .chart-canvas-wrapper {
+    background: transparent !important;
+}
+
+/* Softer chart card backgrounds */
+[data-theme="dark"] .chart-card {
+    background: rgba(26, 31, 46, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .chart-card-header {
+    background: rgba(37, 45, 61, 0.5) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Better text colors in dark mode */
+[data-theme="dark"] .chart-card h3 {
+    color: #e8eaed !important;
+}
+
+[data-theme="dark"] .chart-stat-label {
+    color: #8a8f98 !important;
+}
+
+[data-theme="dark"] .chart-stat-value {
+    color: #6eb5ff !important;
+}
+
+/* Charts header improvements */
+[data-theme="dark"] .charts-header {
+    background: rgba(26, 31, 46, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .charts-header h2 {
+    color: #e8eaed !important;
+}
+
+[data-theme="dark"] .charts-description {
+    color: #8a8f98 !important;
+}
+
+/* Search and sort in dark mode */
+[data-theme="dark"] .charts-search-input,
+[data-theme="dark"] .charts-sort-select {
+    background: rgba(37, 45, 61, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e8eaed !important;
+}
+
+[data-theme="dark"] .charts-search-input::placeholder {
+    color: #6c757d !important;
+}
+
+[data-theme="dark"] .search-icon {
+    color: #8a8f98 !important;
+}

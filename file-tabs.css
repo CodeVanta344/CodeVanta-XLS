@@ -1,0 +1,111 @@
+/* File Tabs Styles */
+.file-tabs-container {
+    display: flex;
+    gap: 4px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.file-tabs-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.file-tabs-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.file-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-width: 120px;
+    max-width: 200px;
+    position: relative;
+}
+
+.file-tab:hover {
+    background: var(--bg-primary);
+    border-color: var(--accent-primary);
+}
+
+.file-tab.active {
+    background: var(--bg-primary);
+    border-bottom-color: var(--bg-primary);
+    border-top: 2px solid var(--accent-primary);
+    z-index: 1;
+}
+
+.file-tab-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.file-tab-name {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-tab-close {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.file-tab:hover .file-tab-close {
+    opacity: 1;
+}
+
+.file-tab-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.file-tab-new {
+    width: 32px;
+    height: 32px;
+    border: 1px dashed var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.file-tab-new:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}

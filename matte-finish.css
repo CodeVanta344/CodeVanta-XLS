@@ -1,0 +1,204 @@
+/* Remove all shine/gloss effects for eye comfort */
+
+/* Remove shimmer animation */
+.glass-card::after {
+    display: none !important;
+}
+
+/* Remove inset highlights - Light Theme */
+[data-theme="light"] .glass-card,
+[data-theme="light"] .app-header,
+[data-theme="light"] .toolbar,
+[data-theme="light"] .tabs-nav,
+[data-theme="light"] .modal-content,
+[data-theme="light"] .stat-card {
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.06),
+        0 8px 32px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .glass-card:hover {
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.08),
+        0 20px 60px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .primary-btn {
+    box-shadow:
+        0 4px 12px rgba(0, 102, 204, 0.3),
+        0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .primary-btn:hover {
+    box-shadow:
+        0 6px 20px rgba(0, 102, 204, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .icon-btn,
+[data-theme="light"] .tool-btn {
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .icon-btn:hover,
+[data-theme="light"] .tool-btn:hover {
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Remove inset highlights - Dark Theme */
+[data-theme="dark"] .glass-card,
+[data-theme="dark"] .app-header,
+[data-theme="dark"] .toolbar,
+[data-theme="dark"] .tabs-nav,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .stat-card {
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme="dark"] .glass-card:hover {
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .primary-btn {
+    box-shadow:
+        0 4px 12px rgba(77, 159, 255, 0.3),
+        0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .primary-btn:hover {
+    box-shadow:
+        0 6px 20px rgba(77, 159, 255, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Remove glossy button effect */
+.primary-btn::before {
+    display: none !important;
+}
+
+/* Matte finish for all cards */
+.glass-card,
+.stat-card,
+.chart-card,
+.modal-content {
+    backdrop-filter: blur(20px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(120%) !important;
+}
+
+/* Remove shine from table headers */
+[data-theme="light"] .data-table th {
+    background: #f8f9fa !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .data-table th {
+    background: rgba(37, 45, 61, 1) !important;
+    box-shadow: none !important;
+}
+
+/* Softer borders without highlights */
+[data-theme="light"] .glass-card,
+[data-theme="light"] .toolbar,
+[data-theme="light"] .tabs-nav {
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="dark"] .glass-card,
+[data-theme="dark"] .toolbar,
+[data-theme="dark"] .tabs-nav {
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Remove focus ring glow, keep simple outline */
+*:focus-visible {
+    outline: 2px solid var(--accent-primary) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+}
+
+/* Matte search input */
+[data-theme="light"] .search-input:focus,
+[data-theme="light"] .input-field:focus {
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1) !important;
+}
+
+[data-theme="dark"] .search-input:focus,
+[data-theme="dark"] .input-field:focus {
+    box-shadow: 0 0 0 3px rgba(77, 159, 255, 0.15) !important;
+}
+
+/* Remove glossy modal header */
+.modal-header {
+    background: var(--bg-secondary) !important;
+}
+
+/* Flat stat cards */
+.stat-card::before {
+    display: none !important;
+}
+
+/* Remove table row shine */
+.data-table tbody tr:hover {
+    box-shadow: none !important;
+}
+
+/* Matte chart cards */
+.chart-card-header {
+    background: var(--bg-secondary) !important;
+}
+
+/* Remove calc item shine */
+.calc-item {
+    background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .calc-item {
+    background: rgba(37, 45, 61, 0.6) !important;
+}
+
+.calc-item:hover {
+    background: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .calc-item:hover {
+    background: rgba(77, 159, 255, 0.1) !important;
+}
+
+/* Reduce backdrop blur for less "glassy" effect */
+.modal {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Flat tabs */
+[data-theme="light"] .tabs-nav {
+    background: rgba(255, 255, 255, 0.98) !important;
+}
+
+[data-theme="dark"] .tabs-nav {
+    background: rgba(26, 31, 46, 0.98) !important;
+}
+
+/* Flat toolbar */
+[data-theme="light"] .toolbar {
+    background: rgba(255, 255, 255, 0.98) !important;
+}
+
+[data-theme="dark"] .toolbar {
+    background: rgba(26, 31, 46, 0.98) !important;
+}
+
+/* Flat header */
+[data-theme="light"] .app-header {
+    background: rgba(255, 255, 255, 0.98) !important;
+}
+
+[data-theme="dark"] .app-header {
+    background: rgba(15, 20, 25, 0.98) !important;
+}
