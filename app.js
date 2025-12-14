@@ -292,11 +292,16 @@ function checkInfiniteScroll() {
     const remainingHeight = scrollHeight - scrollTop;
     const remainingWidth = scrollWidth - scrollLeft;
 
-    const LOAD_THRESHOLD_Y = visibleHeight * 1.5;
-    const LOAD_THRESHOLD_X = visibleWidth * 1.5;
+    // Correctly calculate distance to the end (hidden content)
+    const distanceToBottom = scrollHeight - scrollTop - visibleHeight;
+    const distanceToRight = scrollWidth - scrollLeft - visibleWidth;
 
-    if (remainingHeight < LOAD_THRESHOLD_Y) {
-        const shortagePx = LOAD_THRESHOLD_Y - remainingHeight;
+    // Use fixed thresholds to avoid aggressively filling screen on zoom out
+    const PIXEL_THRESHOLD = 500;
+
+    if (remainingHeight < PIXEL_THRESHOLD) {
+        // ... existing row logic ...
+        const shortagePx = PIXEL_THRESHOLD - remainingHeight;
         const rowsNeeded = Math.ceil(shortagePx / ESTIMATED_ROW_HEIGHT);
         const rowsToAdd = Math.max(RENDER_CHUNK_SIZE, rowsNeeded);
 
@@ -308,8 +313,9 @@ function checkInfiniteScroll() {
         }
     }
 
-    if (remainingWidth < LOAD_THRESHOLD_X) {
-        const shortagePx = LOAD_THRESHOLD_X - remainingWidth;
+    // Restore Column Infinite Scroll (Fixed Threshold)
+    if (distanceToRight < PIXEL_THRESHOLD) {
+        const shortagePx = PIXEL_THRESHOLD - distanceToRight;
         const colsNeeded = Math.ceil(shortagePx / ESTIMATED_COL_WIDTH);
         const colsToAdd = Math.max(5, colsNeeded);
         addMoreCols(colsToAdd);
@@ -1101,6 +1107,43 @@ function initializeAutoUpdater() {
     });
 }
 
+// Folder Selection Logic
+function initializeFolderSelection() {
+    if (!window.electronAPI) return;
+
+    const modal = document.getElementById('folder-selection-modal');
+    const selectBtn = document.getElementById('select-folder-btn');
+
+    // Show modal when requested
+    window.electronAPI.onRequestFolderSelection(() => {
+        // Hide other main views to focus on selection
+        document.getElementById('main-app').classList.remove('hidden'); // Ensure wrapper is visible
+        document.getElementById('import-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.add('hidden');
+        document.getElementById('data-section').classList.add('hidden');
+        document.getElementById('charts-section').classList.add('hidden');
+
+        // Show the modal
+        modal.classList.remove('hidden');
+    });
+
+    // Handle selection click
+    selectBtn.addEventListener('click', async () => {
+        const result = await window.electronAPI.selectFolder();
+        if (result && result.success) {
+            modal.classList.add('hidden');
+
+            // Restore Dashboard View
+            const dashboardTab = document.querySelector('.tab-btn[data-tab="dashboard"]');
+            if (dashboardTab) {
+                dashboardTab.click();
+            } else {
+                document.getElementById('dashboard-section').classList.remove('hidden');
+            }
+        }
+    });
+}
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
     initializeSplashScreen();
@@ -1111,4 +1154,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof initializeTabs === 'function') initializeTabs();
     if (typeof initializeFileTabs === 'function') initializeFileTabs();
     initializeAutoUpdater(); // Initialize Auto Updater
+    initializeFolderSelection(); // Initialize Folder Selection
 });

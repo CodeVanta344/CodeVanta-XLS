@@ -65,7 +65,15 @@ function generateAutoCharts() {
     // Find numeric columns with stats
     const numericColumns = [];
     headers.forEach((header, index) => {
-        const values = rows.map(row => parseFloat(row[index])).filter(v => !isNaN(v));
+        const values = rows.map(row => {
+            let val = row[index];
+            if (typeof val === 'number') return val;
+            if (!val) return NaN;
+
+            // Clean string: replace comma with dot, remove spaces/currency
+            val = String(val).replace(/,/g, '.').replace(/[^\d.-]/g, '');
+            return parseFloat(val);
+        }).filter(v => !isNaN(v));
         if (values.length > rows.length * 0.5) {
             const sum = values.reduce((a, b) => a + b, 0);
             const avg = sum / values.length;

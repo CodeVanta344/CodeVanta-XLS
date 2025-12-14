@@ -593,7 +593,7 @@ body {
 .table-wrapper {
     overflow: auto;
 
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 110px);
     /* Adjust based on header/toolbar height */
     position: relative;
     cursor: grab;
@@ -648,7 +648,8 @@ body {
 }
 
 .data-table {
-    width: 100%;
+    min-width: 100%;
+    width: auto;
     border-collapse: collapse;
     font-size: var(--font-size-sm);
 }
@@ -669,6 +670,8 @@ body {
     border-right: 1px solid var(--border-color);
     white-space: nowrap;
     background: var(--bg-secondary);
+    min-width: 120px;
+    /* Force minimum width to prevent squishing */
 }
 
 .data-table th:last-child {
@@ -680,6 +683,14 @@ body {
     border-bottom: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
     color: var(--text-secondary);
+    white-space: nowrap;
+    /* Prevent text wrapping */
+    min-width: 120px;
+    /* Match header minimum width */
+    max-width: 300px;
+    /* Optional: prevent super wide cells if desired, or remove */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .data-table td:last-child {

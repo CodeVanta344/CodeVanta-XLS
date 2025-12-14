@@ -92,7 +92,7 @@ function createWindow() {
 // Sélection de dossier
 ipcMain.handle('select-folder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory'],
+        properties: ['openDirectory', 'createDirectory'],
         title: 'Sélectionner le dossier contenant vos fichiers Excel'
     });
 
@@ -112,7 +112,7 @@ ipcMain.handle('select-folder', async () => {
 // Changer de dossier
 ipcMain.handle('change-folder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory'],
+        properties: ['openDirectory', 'createDirectory'],
         title: 'Sélectionner un nouveau dossier'
     });
 

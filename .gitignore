@@ -1,5 +1,6 @@
 node_modules
 dist
+releases
 .env
 .DS_Store
 Thumbs.db

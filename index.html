@@ -550,234 +550,42 @@
         </div>
 
 
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card glass-card">
-                <div class="stat-label">Lignes</div>
-                <div id="stat-rows" class="stat-value">0</div>
-            </div>
-            <div class="stat-card glass-card">
-                <div class="stat-label">Colonnes</div>
-                <div id="stat-cols" class="stat-value">0</div>
-            </div>
-            <div class="stat-card glass-card">
-                <div class="stat-label">Cellules</div>
-                <div id="stat-cells" class="stat-value">0</div>
-            </div>
-        </div>
-        </section>
 
-        <!-- Charts Section -->
-        <section id="charts-section" class="charts-section hidden">
-            <div class="charts-header glass-card">
-                <div class="charts-header-content">
-                    <div class="charts-title-section">
-                        <h2>📈 Graphiques Automatiques</h2>
-                        <p class="charts-description">Visualisations générées automatiquement à partir de vos
-                            données numériques</p>
-                    </div>
-                    <div class="charts-controls">
-                        <div class="charts-search">
-                            <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" />
-                                <path d="M12 12L16 16" stroke="currentColor" stroke-width="1.5"
-                                    stroke-linecap="round" />
-                            </svg>
-                            <input type="text" id="charts-search" class="charts-search-input"
-                                placeholder="Rechercher un graphique...">
+        <!-- Update Notification Modal -->
+        <div id="update-modal" class="modal hidden">
+            <div class="modal-content glass-card" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎁</div>
+                <h3 style="margin-bottom: 1rem;">Mise à jour disponible !</h3>
+                <p id="update-message" style="margin-bottom: 2rem; color: var(--text-secondary);">
+                    Une nouvelle version est prête à être téléchargée.
+                </p>
+                <div id="update-actions">
+                    <button id="restart-btn" class="primary-btn"
+                        style="width: 100%; justify-content: center; display: none;">
+                        Redémarrer pour installer
+                    </button>
+                    <div id="download-progress" style="display: none; margin-top: 1rem;">
+                        <p style="font-size: 0.875rem; color: var(--text-tertiary); margin-bottom: 0.5rem;">
+                            Téléchargement
+                            en cours...</p>
+                        <div style="width: 100%; height: 4px; background: var(--bg-tertiary); border-radius: 2px;">
+                            <div class="loading-progress"
+                                style="width: 0%; transition: width 0.3s; background: var(--accent-primary);"></div>
                         </div>
-                        <select id="charts-sort" class="charts-sort-select">
-                            <option value="name-asc">📝 Nom (A → Z)</option>
-                            <option value="name-desc">📝 Nom (Z → A)</option>
-                            <option value="avg-desc">📊 Moyenne (↓ Élevée)</option>
-                            <option value="avg-asc">📊 Moyenne (↑ Faible)</option>
-                            <option value="sum-desc">➕ Somme (↓ Élevée)</option>
-                            <option value="sum-asc">➕ Somme (↑ Faible)</option>
-                            <option value="max-desc">⬆️ Maximum (↓ Élevé)</option>
-                            <option value="max-asc">⬆️ Maximum (↑ Faible)</option>
-                            <option value="min-desc">⬇️ Minimum (↓ Élevé)</option>
-                            <option value="min-asc">⬇️ Minimum (↑ Faible)</option>
-                            <option value="count-desc">🔢 Nombre (↓ Plus)</option>
-                            <option value="count-asc">🔢 Nombre (↑ Moins)</option>
-                            <option value="range-desc">📏 Plage (↓ Large)</option>
-                            <option value="range-asc">📏 Plage (↑ Étroite)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="charts-grid">
-                <div id="auto-charts-container"></div>
-            </div>
-        </section>
-        </main>
-    </div>
-
-    <!-- Modals -->
-    <!-- Sort Modal -->
-    <div id="sort-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <div class="modal-header">
-                <h3>Trier les données</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <label for="sort-column">Colonne</label>
-                <select id="sort-column" class="input-field"></select>
-                <label for="sort-order">Ordre</label>
-                <select id="sort-order" class="input-field">
-                    <option value="asc">Croissant</option>
-                    <option value="desc">Décroissant</option>
-                </select>
-            </div>
-            <div class="modal-footer">
-                <button class="secondary-btn close-modal">Annuler</button>
-                <button id="apply-sort" class="primary-btn">Appliquer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Modal -->
-    <div id="filter-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <div class="modal-header">
-                <h3>Filtrer les données</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <label for="filter-column">Colonne</label>
-                <select id="filter-column" class="input-field"></select>
-                <label for="filter-value">Valeur</label>
-                <input type="text" id="filter-value" class="input-field" placeholder="Entrez une valeur...">
-            </div>
-            <div class="modal-footer">
-                <button class="secondary-btn close-modal">Annuler</button>
-                <button id="apply-filter" class="primary-btn">Appliquer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Calculate Modal -->
-    <div id="calculate-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <div class="modal-header">
-                <h3>Calculs automatiques</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <label for="calc-column">Colonne</label>
-                <select id="calc-column" class="input-field"></select>
-                <div class="calc-results">
-                    <div class="calc-item">
-                        <span>Somme:</span>
-                        <strong id="calc-sum">-</strong>
-                    </div>
-                    <div class="calc-item">
-                        <span>Moyenne:</span>
-                        <strong id="calc-avg">-</strong>
-                    </div>
-                    <div class="calc-item">
-                        <span>Minimum:</span>
-                        <strong id="calc-min">-</strong>
-                    </div>
-                    <div class="calc-item">
-                        <span>Maximum:</span>
-                        <strong id="calc-max">-</strong>
-                    </div>
-                    <div class="calc-item">
-                        <span>Compte:</span>
-                        <strong id="calc-count">-</strong>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Chart Modal -->
-    <div id="chart-modal" class="modal hidden">
-        <div class="modal-content glass-card chart-modal-content">
-            <div class="modal-header">
-                <h3>Graphique</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="chart-controls">
-                    <div class="control-group">
-                        <label for="chart-type">Type</label>
-                        <select id="chart-type" class="input-field">
-                            <option value="bar">Barres</option>
-                            <option value="line">Courbes</option>
-                            <option value="pie">Camembert</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label for="chart-x">Axe X</label>
-                        <select id="chart-x" class="input-field"></select>
-                    </div>
-                    <div class="control-group">
-                        <label for="chart-y">Axe Y</label>
-                        <select id="chart-y" class="input-field"></select>
-                    </div>
-                    <button id="generate-chart" class="primary-btn">Générer</button>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="chart-canvas"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Folder Selection Modal -->
-    <div id="folder-selection-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <div class="modal-header">
-                <h3>Sélectionner un dossier</h3>
-            </div>
-            <div class="modal-body">
-                <p>Choisissez le dossier contenant vos fichiers Excel.</p>
-                <p>L'application surveillera automatiquement ce dossier et importera tous les fichiers .xlsx qu'il
-                    contient.</p>
-            </div>
-            <div class="modal-footer">
-                <button id="select-folder-btn" class="primary-btn">Choisir un dossier</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Update Notification Modal -->
-    <div id="update-modal" class="modal hidden">
-        <div class="modal-content glass-card" style="text-align: center; padding: 2rem;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🎁</div>
-            <h3 style="margin-bottom: 1rem;">Mise à jour disponible !</h3>
-            <p id="update-message" style="margin-bottom: 2rem; color: var(--text-secondary);">
-                Une nouvelle version est prête à être téléchargée.
-            </p>
-            <div id="update-actions">
-                <button id="restart-btn" class="primary-btn"
-                    style="width: 100%; justify-content: center; display: none;">
-                    Redémarrer pour installer
-                </button>
-                <div id="download-progress" style="display: none; margin-top: 1rem;">
-                    <p style="font-size: 0.875rem; color: var(--text-tertiary); margin-bottom: 0.5rem;">Téléchargement
-                        en cours...</p>
-                    <div style="width: 100%; height: 4px; background: var(--bg-tertiary); border-radius: 2px;">
-                        <div class="loading-progress"
-                            style="width: 0%; transition: width 0.3s; background: var(--accent-primary);"></div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="license-manager.js"></script>
+        <script src="license-manager.js"></script>
 
-    <script src="dashboardController.js"></script>
-    <script src="./node_modules/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="tabs-charts.js"></script>
-    <script src="file-tabs.js"></script>
-    <script src="app.js"></script>
-    <script src="feedback-ui.js"></script>
+        <script src="dashboardController.js"></script>
+        <script src="./node_modules/xlsx/dist/xlsx.full.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="tabs-charts.js"></script>
+        <script src="file-tabs.js"></script>
+        <script src="app.js"></script>
+        <script src="feedback-ui.js"></script>
 </body>
 
 </html>
