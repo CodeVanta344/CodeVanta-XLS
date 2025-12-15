@@ -18,11 +18,49 @@
 }
 
 /* Enhanced table for light theme */
+/* Enhanced table for light theme */
 [data-theme="light"] .data-table {
     background: white;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-collapse: collapse;
+    /* Essential for cell borders */
+}
+
+/* ... existing styles ... */
+
+/* Imported Excel Borders */
+.border-top-thick {
+    border-top: 3px solid #000 !important;
+}
+
+.border-bottom-thick {
+    border-bottom: 3px solid #000 !important;
+}
+
+.border-left-thick {
+    border-left: 3px solid #000 !important;
+}
+
+.border-right-thick {
+    border-right: 3px solid #000 !important;
+}
+
+.border-top-thin {
+    border-top: 1px solid #666 !important;
+}
+
+.border-bottom-thin {
+    border-bottom: 1px solid #666 !important;
+}
+
+.border-left-thin {
+    border-left: 1px solid #666 !important;
+}
+
+.border-right-thin {
+    border-right: 1px solid #666 !important;
 }
 
 [data-theme="light"] .data-table th {
@@ -39,17 +77,6 @@
 }
 
 [data-theme="light"] .data-table tbody tr:hover {
-    background: #f0f7ff;
-    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
-}
-
-[data-theme="light"] .data-table td {
-    border-bottom: 1px solid #f0f0f0;
-}
-
-/* Enhanced stat cards */
-[data-theme="light"] .stat-card {
-    background: white;
     border: 1px solid #dee2e6;
     box-shadow:
         0 2px 8px rgba(0, 0, 0, 0.06),
@@ -157,4 +184,37 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     font-weight: 700;
     letter-spacing: 0.3px;
+}
+
+/* Imported Excel Borders */
+.border-top-thick {
+    border-top: 3px solid #000 !important;
+}
+
+.border-bottom-thick {
+    border-bottom: 3px solid #000 !important;
+}
+
+.border-left-thick {
+    border-left: 3px solid #000 !important;
+}
+
+.border-right-thick {
+    border-right: 3px solid #000 !important;
+}
+
+.border-top-thin {
+    border-top: 1px solid #666 !important;
+}
+
+.border-bottom-thin {
+    border-bottom: 1px solid #666 !important;
+}
+
+.border-left-thin {
+    border-left: 1px solid #666 !important;
+}
+
+.border-right-thin {
+    border-right: 1px solid #666 !important;
 }

@@ -125,7 +125,14 @@ function trimTrailingEmptyRows() {
     let lastNonEmptyIndex = -1;
     for (let i = window.currentSheet.length - 1; i >= 0; i--) {
         const row = window.currentSheet[i];
-        const hasContent = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
+        const hasContent = row.some(cell => {
+            let val = cell;
+            if (cell && typeof cell === 'object' && 'value' in cell) {
+                val = cell.value;
+            }
+            return val !== null && val !== undefined && String(val).trim() !== '';
+        });
+
         if (hasContent) {
             lastNonEmptyIndex = i;
             break;
@@ -133,10 +140,13 @@ function trimTrailingEmptyRows() {
     }
 
     // 2. Determine safe buffer
-    const BUFFER = 50;
-    const minRows = 50;
+    const BUFFER = 5; // Reduced from 50 to 5
+    const minRows = 20; // Reduced from 100 to 20
 
-    let targetLength = Math.max(lastNonEmptyIndex + 1 + BUFFER, minRows);
+    let targetLength = lastNonEmptyIndex + 1 + BUFFER;
+
+    // Ensure minimum rows
+    if (targetLength < minRows) targetLength = minRows;
 
     // 3. Trim if current length exceeds target
     if (window.currentSheet.length > targetLength) {
@@ -156,6 +166,13 @@ function trimTrailingEmptyRows() {
         } else {
             updateStats(window.currentSheet);
         }
+    } else if (window.currentSheet.length < targetLength) {
+        // Extend to support minimum scroll height
+        const cols = window.currentSheet.length > 0 ? window.currentSheet[0].length : 26;
+        while (window.currentSheet.length < targetLength) {
+            window.currentSheet.push(new Array(cols).fill(null));
+        }
+        updateStats(window.currentSheet);
     }
 }
 
@@ -166,45 +183,74 @@ function initializeGridInteractions() {
 
     // 1. Interactions (Pan & Zoom)
     let isDown = false;
-    let isZooming = false;
+    let isDragging = false;
+    let wasDragging = false; // To prevent click after drag
     let startX, startY;
     let scrollLeft, scrollTop;
+    let isZooming = false;
     let startZoomY;
     let startZoomLevel;
 
     tableWrapper.addEventListener('mousedown', (e) => {
+        // Only Left Click for Pan
+        if (e.button !== 0) return;
+
+        // Prevent Pan on inputs or contentEditable
         if (e.target.tagName !== 'INPUT' && e.target.contentEditable !== 'true') {
             isDown = true;
+            isDragging = false; // Reset drag state only
+
             if (e.ctrlKey) {
                 isZooming = true;
                 startZoomY = e.pageY;
                 startZoomLevel = zoomLevel;
                 document.body.style.cursor = 'ns-resize';
             } else {
-                tableWrapper.classList.add('active');
-                startX = e.pageX - tableWrapper.offsetLeft;
-                startY = e.pageY - tableWrapper.offsetTop;
+                // Prepare for Pan
+                startX = e.pageX;
+                startY = e.pageY;
                 scrollLeft = tableWrapper.scrollLeft;
                 scrollTop = tableWrapper.scrollTop;
             }
+            // Attach document listeners
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('blur', onMouseUp);
         }
     });
 
-    const stopInteraction = () => {
+    // Capture click to prevent selection if we just dragged
+    tableWrapper.addEventListener('click', (e) => {
+        if (wasDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+            wasDragging = false;
+        }
+    }, true);
+
+    const onMouseUp = () => {
+        if (isDragging) {
+            wasDragging = true;
+            setTimeout(() => wasDragging = false, 50); // Reset after click phase
+        }
         isDown = false;
+        isDragging = false;
         isZooming = false;
+
         tableWrapper.classList.remove('active');
         document.body.style.cursor = '';
+
+        // Remove document listeners
+        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('blur', onMouseUp);
     };
 
-    tableWrapper.addEventListener('mouseleave', stopInteraction);
-    tableWrapper.addEventListener('mouseup', stopInteraction);
-
-    tableWrapper.addEventListener('mousemove', (e) => {
+    const onMouseMove = (e) => {
         if (!isDown) return;
-        e.preventDefault();
 
         if (isZooming) {
+            e.preventDefault();
             const deltaY = startZoomY - e.pageY;
             const sensitivity = 0.5;
             let newZoom = startZoomLevel + (deltaY * sensitivity);
@@ -216,51 +262,51 @@ function initializeGridInteractions() {
                 checkInfiniteScroll();
             }
         } else {
-            const x = e.pageX - tableWrapper.offsetLeft;
-            const y = e.pageY - tableWrapper.offsetTop;
-            const walkX = (x - startX) * 1.5;
-            const walkY = (y - startY) * 1.5;
-            tableWrapper.scrollLeft = scrollLeft - walkX;
-            tableWrapper.scrollTop = scrollTop - walkY;
+            // Panning Logic with Threshold
+            const x = e.pageX;
+            const y = e.pageY;
+
+            if (!isDragging) {
+                const moveX = Math.abs(x - startX);
+                const moveY = Math.abs(y - startY);
+                if (moveX > 3 || moveY > 3) {
+                    isDragging = true;
+                    tableWrapper.classList.add('active'); // Activate cursor
+                }
+            }
+
+            if (isDragging) {
+                e.preventDefault(); // Prevent selection
+
+                // Standard Drag Mode (Mouse Down -> Pull Content Down aka View Up)
+                const walkX = (x - startX) * 2;
+                const walkY = (y - startY) * 2;
+
+                tableWrapper.scrollLeft = scrollLeft - walkX;
+                tableWrapper.scrollTop = scrollTop - walkY;
+            }
         }
+    };
+
+    tableWrapper.addEventListener('mouseleave', () => {
+        // Optional: Keep panning even if mouse leaves wrapper
     });
 
-    // Keyboard Nav
-    document.addEventListener('keydown', (e) => {
-        if (!window.selectedCell || window.selectedCell.contentEditable === 'true') return;
-        const currentRow = window.selectedCell.parentElement;
-        if (!currentRow) return;
-        const currentTable = currentRow.parentElement;
-        const rows = Array.from(currentTable.querySelectorAll('tr'));
-        const cells = Array.from(currentRow.querySelectorAll('td'));
-        const rowIndex = rows.indexOf(currentRow);
-        const colIndex = cells.indexOf(window.selectedCell);
-        let nextCell = null;
+    // Keyboard Navigation is now handled by initializeKeyboardNavigation() at the end of this file
 
-        switch (e.key) {
-            case 'ArrowUp': if (rowIndex > 0) nextCell = rows[rowIndex - 1].querySelectorAll('td')[colIndex]; break;
-            case 'ArrowDown':
-                if (rowIndex < rows.length - 1) nextCell = rows[rowIndex + 1].querySelectorAll('td')[colIndex];
-                else { addMoreRows(1); setTimeout(() => { const newR = currentTable.querySelectorAll('tr'); selectCell(newR[newR.length - 1].querySelectorAll('td')[colIndex]); }, 50); return; }
-                break;
-            case 'ArrowLeft': if (colIndex > 0) nextCell = cells[colIndex - 1]; break;
-            case 'ArrowRight':
-                if (colIndex < cells.length - 1) nextCell = cells[colIndex + 1];
-                else { addMoreCols(1); setTimeout(() => { selectCell(rows[rowIndex].querySelectorAll('td')[colIndex + 1]); }, 50); return; }
-                break;
-        }
-        if (nextCell) { e.preventDefault(); selectCell(nextCell); }
-    });
-
-    function selectCell(cell) {
+    function selectCell(cell, scrollTo = true) {
         if (!cell) return;
         if (window.selectedCell) window.selectedCell.classList.remove('selected-cell');
         window.selectedCell = cell;
         cell.classList.add('selected-cell');
-        cell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        if (scrollTo) {
+            cell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+        checkInfiniteScroll();
     }
     window.selectCell = selectCell;
 
+    // Explicitly handle wheel to ensure scrolling works even if native is blocked
     tableWrapper.addEventListener('wheel', (e) => {
         if (e.ctrlKey) {
             e.preventDefault();
@@ -268,8 +314,21 @@ function initializeGridInteractions() {
             else zoomLevel = Math.max(zoomLevel - 10, 20);
             applyZoom();
             checkInfiniteScroll();
+        } else {
+            // Manual Scroll Fallback
+            // Normalize deltaY based on deltaMode
+            // 0 = Pixels, 1 = Lines, 2 = Pages
+            let delta = e.deltaY;
+            if (e.deltaMode === 1) {
+                delta *= 40; // Approx row height
+            } else if (e.deltaMode === 2) {
+                delta *= 800; // Page height
+            }
+
+            tableWrapper.scrollTop += delta;
+            checkInfiniteScroll();
         }
-    });
+    }, { passive: false });
 
     tableWrapper.addEventListener('scroll', () => {
         checkInfiniteScroll();
@@ -284,41 +343,22 @@ function checkInfiniteScroll() {
 
     const zoomFactor = window.zoomLevel / 100;
     const ESTIMATED_ROW_HEIGHT = 25 * zoomFactor;
-    const ESTIMATED_COL_WIDTH = 100 * zoomFactor;
 
     const visibleHeight = clientHeight;
-    const visibleWidth = clientWidth;
-
     const remainingHeight = scrollHeight - scrollTop;
-    const remainingWidth = scrollWidth - scrollLeft;
-
-    // Correctly calculate distance to the end (hidden content)
-    const distanceToBottom = scrollHeight - scrollTop - visibleHeight;
-    const distanceToRight = scrollWidth - scrollLeft - visibleWidth;
 
     // Use fixed thresholds to avoid aggressively filling screen on zoom out
     const PIXEL_THRESHOLD = 500;
 
     if (remainingHeight < PIXEL_THRESHOLD) {
-        // ... existing row logic ...
-        const shortagePx = PIXEL_THRESHOLD - remainingHeight;
-        const rowsNeeded = Math.ceil(shortagePx / ESTIMATED_ROW_HEIGHT);
-        const rowsToAdd = Math.max(RENDER_CHUNK_SIZE, rowsNeeded);
-
         if (renderedRowCount < window.currentSheet.length) {
+            const shortagePx = PIXEL_THRESHOLD - remainingHeight;
+            const rowsNeeded = Math.ceil(shortagePx / ESTIMATED_ROW_HEIGHT);
+            const rowsToAdd = Math.max(RENDER_CHUNK_SIZE, rowsNeeded);
+
             const nextChunk = Math.min(window.currentSheet.length - renderedRowCount, rowsToAdd);
             if (nextChunk > 0) renderRows(renderedRowCount, nextChunk);
-        } else {
-            addMoreRows(rowsToAdd);
         }
-    }
-
-    // Restore Column Infinite Scroll (Fixed Threshold)
-    if (distanceToRight < PIXEL_THRESHOLD) {
-        const shortagePx = PIXEL_THRESHOLD - distanceToRight;
-        const colsNeeded = Math.ceil(shortagePx / ESTIMATED_COL_WIDTH);
-        const colsToAdd = Math.max(5, colsNeeded);
-        addMoreCols(colsToAdd);
     }
 }
 
@@ -547,51 +587,60 @@ function handleFileImport(e) {
     if (file) handleFile(file);
 }
 
-function handleFile(file) {
-    const reader = new FileReader();
+// NOTE: Smart Header Detection is now handled in the backend (DataExtractor.js)
+// We simply delegate the file path to the main process.
 
-    reader.onload = (e) => {
+async function handleFile(file) {
+    // Check if we have electronAPI (Desktop app)
+    if (window.electronAPI) {
         try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            // Attempt to get path via webUtils (safest for new Electron versions)
+            let filePath;
+            try {
+                filePath = window.electronAPI.getPathForFile ? window.electronAPI.getPathForFile(file) : file.path;
+            } catch (e) {
+                console.warn('getPathForFile failed, falling back to file.path', e);
+                filePath = file.path;
+            }
 
-            // Get first sheet
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+            if (!filePath) {
+                alert("Erreur: Impossible de lire le chemin du fichier. Veuillez réessayer.");
+                console.error("File path is missing", file);
+                return;
+            }
 
-            // Convert to JSON
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            console.log('Requesting backend import for:', filePath);
+            const result = await window.electronAPI.parseFile(filePath);
 
-            window.workbookData = jsonData;
-            window.currentSheet = jsonData;
-            window.filteredData = null;
-
-            displayData(jsonData);
-            showDataSection();
-
-            // Re-initialize grid interactions after loading data
-            setTimeout(() => {
-                initializeGridInteractions();
-            }, 100);
-
-            exportBtn.disabled = false;
-
+            if (result.success) {
+                console.log('Import successful', result);
+                // Data will be refreshed via 'file-imported' event or dashboard refresh
+            } else {
+                alert('Erreur: ' + result.error);
+            }
         } catch (error) {
-            alert('Erreur lors de la lecture du fichier: ' + error.message);
+            console.error('Import error:', error);
+            alert('Erreur système lors de l\'import: ' + error.message);
         }
-    };
-
-    reader.readAsArrayBuffer(file);
+    } else {
+        // Fallback for Web Version
+        alert("L'importation avec styles nécessite l'application Desktop (Electron).");
+    }
 }
 
 // Display Data (Progressive)
 function displayData(data) {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+        tableHead.innerHTML = '';
+        tableBody.innerHTML = '';
+        return;
+    }
 
-    // Clear table
+    // Reset state
+    window.filteredData = data;
+    renderedRowCount = 0; // Reset count
     tableHead.innerHTML = '';
     tableBody.innerHTML = '';
-    renderedRowCount = 0; // Reset count
 
     // Get headers (first row)
     const headers = data[0];
@@ -602,36 +651,35 @@ function displayData(data) {
         const th = document.createElement('th');
         th.textContent = header || `Colonne ${index + 1}`;
         th.contentEditable = true;
+
+        // Sorting/Title edit logic
         th.addEventListener('blur', (e) => {
-            data[0][index] = e.target.textContent;
+            if (typeof data[0][index] === 'object' && data[0][index] !== null) {
+                data[0][index].value = e.target.textContent;
+            } else {
+                data[0][index] = e.target.textContent;
+            }
         });
         headerRow.appendChild(th);
     });
     tableHead.appendChild(headerRow);
-
-    // Initial Render of first chunk
-    const totalDataRows = data.length - 1;
-    const initialLoad = Math.min(totalDataRows, RENDER_CHUNK_SIZE);
-
-    if (initialLoad > 0) {
-        renderRows(0, initialLoad);
-    }
 
     // Update stats
     updateStats(data);
 
     // Populate modal selects
     populateColumnSelects(headers);
+
+    // Initial Chunk
+    renderRows(1, RENDER_CHUNK_SIZE);
 }
 
 // Helper to render a chunk of rows
 function renderRows(startDataRowIndex, count) {
-    // startDataRowIndex is 0-based index of DATA rows (so actually matches data[index + 1])
     const data = window.filteredData || window.currentSheet;
     if (!data) return;
 
     const headers = data[0];
-
     const fragment = document.createDocumentFragment();
 
     for (let i = 0; i < count; i++) {
@@ -647,7 +695,143 @@ function renderRows(startDataRowIndex, count) {
         headers.forEach((_, colIndex) => {
             const td = document.createElement('td');
             td.contentEditable = false;
-            td.textContent = row[colIndex] !== undefined ? row[colIndex] : '';
+
+            const cellData = row[colIndex];
+            let cellValue = '';
+            let cellStyle = null;
+
+            if (cellData && typeof cellData === 'object' && cellData !== null && ('value' in cellData || 'style' in cellData)) {
+                cellValue = (cellData.value !== undefined && cellData.value !== null) ? cellData.value : '';
+                cellStyle = cellData.style;
+            } else {
+                cellValue = (cellData !== undefined && cellData !== null) ? cellData : '';
+            }
+
+            td.textContent = cellValue;
+
+            if (cellStyle && cellStyle.border) {
+                const b = cellStyle.border;
+                if (b.top && (b.top.style === 'thick' || b.top.style === 'medium')) td.classList.add('border-top-thick');
+                if (b.bottom && (b.bottom.style === 'thick' || b.bottom.style === 'medium')) td.classList.add('border-bottom-thick');
+                if (b.left && (b.left.style === 'thick' || b.left.style === 'medium')) td.classList.add('border-left-thick');
+                if (b.right && (b.right.style === 'thick' || b.right.style === 'medium')) td.classList.add('border-right-thick');
+
+                if (b.right && b.right.style === 'thin') td.classList.add('border-right-thin');
+            }
+
+            // NEW: Apply Rich Styles (Font, Fill, Alignment)
+            if (cellStyle) {
+                // Font
+                if (cellStyle.font) {
+                    if (cellStyle.font.bold) td.style.fontWeight = 'bold';
+                    if (cellStyle.font.italic) td.style.fontStyle = 'italic';
+                    if (cellStyle.font.size) td.style.fontSize = `${cellStyle.font.size}pt`;
+                    if (cellStyle.font.name) td.style.fontFamily = cellStyle.font.name;
+                    if (cellStyle.font.color && cellStyle.font.color.argb) {
+                        // Excel ARGB is FF RRGGBB -> CSS #RRGGBB
+                        let hexColor = cellStyle.font.color.argb.substring(2);
+
+                        // Fix for Dark Mode: If text is black/dark and background is transparent (default), invert to white
+                        // Check if Dark Mode is active
+                        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+                        // Check if an explicit background is set?
+                        // If cellStyle.fill is set, we let the contrast logic handle it (or this color overrides it?)
+                        // Actually, lines 730-733 only run if NO font color is set.
+                        // Here, a font color IS set.
+
+                        // If background is NOT set (transparent -> dark app bg), and text is dark, we must invert.
+                        const hasBackground = cellStyle.fill && cellStyle.fill.fgColor;
+
+                        if (isDark && !hasBackground) {
+                            // Convert to RGB to check brightness
+                            const r = parseInt(hexColor.substr(0, 2), 16);
+                            const g = parseInt(hexColor.substr(2, 2), 16);
+                            const b = parseInt(hexColor.substr(4, 2), 16);
+                            const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+
+                            // If very dark text on dark background -> Force White
+                            if (brightness < 100) {
+                                hexColor = 'e8eaed'; // Light gray/white
+                            }
+                        }
+
+                        td.style.color = `#${hexColor}`;
+                    }
+                }
+
+
+                // Background (Fill)
+                let bgColor = null;
+                if (cellStyle.fill && (cellStyle.fill.type === 'pattern' || !cellStyle.fill.type)) {
+                    if (cellStyle.fill.fgColor && cellStyle.fill.fgColor.argb) {
+                        const argb = cellStyle.fill.fgColor.argb;
+                        if (argb.length === 8 && argb.substring(0, 2) !== '00') { // Not transparent
+                            bgColor = argb.substring(2);
+                            td.style.backgroundColor = `#${bgColor}`;
+                        } else if (argb.length !== 8) {
+                            bgColor = argb;
+                            td.style.backgroundColor = `#${bgColor}`;
+                        }
+                    }
+                }
+
+                // INTELLIGENT CONTRAST FIX (Robust)
+                // Check theme
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+                // Get effective text color (default to Black if not set, or extract from style)
+                let txtColor = '000000';
+                if (cellStyle.font && cellStyle.font.color && cellStyle.font.color.argb) {
+                    txtColor = cellStyle.font.color.argb.substring(2);
+                }
+
+                // Get effective background color (default to White if Light Mode, Dark if Dark Mode)
+                // If explicit bgColor found above, use it.
+                // Else use theme default.
+                const effectiveBg = bgColor ? bgColor : (isDark ? '1a1a1a' : 'ffffff');
+
+                // Calculate Brightness (0-255)
+                const getBrightness = (hex) => {
+                    if (!hex) return 0;
+                    const r = parseInt(hex.substr(0, 2), 16) || 0;
+                    const g = parseInt(hex.substr(2, 2), 16) || 0;
+                    const b = parseInt(hex.substr(4, 2), 16) || 0;
+                    return ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                };
+
+                const txtB = getBrightness(txtColor);
+                const bgB = getBrightness(effectiveBg);
+
+                // If Contrast is poor (both dark or both light)
+                // Threshold increased to 125 to ensure strict readability (prevent light gray on white)
+                if (Math.abs(txtB - bgB) < 125) {
+                    // Conflict!
+                    if (bgB < 128) {
+                        // Background is Dark -> Force Text White
+                        td.style.color = '#e8eaed';
+                    } else {
+                        // Background is Light -> Force Text Black
+                        td.style.color = '#1a1a1a';
+                    }
+                }
+                // Also specifically catch the "Black text on Dark Theme Default BG" case
+                // which might slip through if 'effectiveBg' isn't perfect
+                if (isDark && !bgColor && txtB < 50) {
+                    td.style.color = '#e8eaed';
+                }
+
+                // Alignment
+                if (cellStyle.alignment) {
+
+                    if (cellStyle.alignment.horizontal) td.style.textAlign = cellStyle.alignment.horizontal;
+                    if (cellStyle.alignment.vertical) td.style.verticalAlign = cellStyle.alignment.vertical;
+                    if (cellStyle.alignment.wrapText) {
+                        td.style.whiteSpace = 'normal';
+                        td.style.wordBreak = 'break-word';
+                    }
+                }
+            }
 
             // Double click to edit
             td.addEventListener('dblclick', (e) => {
@@ -663,12 +847,18 @@ function renderRows(startDataRowIndex, count) {
 
                 const value = e.target.textContent;
                 if (!data[dataRowIndex]) data[dataRowIndex] = [];
-                data[dataRowIndex][colIndex] = value;
+
+                // Update value preserving object structure if exists
+                if (typeof data[dataRowIndex][colIndex] === 'object' && data[dataRowIndex][colIndex] !== null) {
+                    data[dataRowIndex][colIndex].value = value;
+                } else {
+                    data[dataRowIndex][colIndex] = value;
+                }
             });
 
             // Click listener for selection
             td.addEventListener('click', (e) => {
-                if (window.selectCell) window.selectCell(e.target);
+                if (window.selectCell) window.selectCell(e.target, false); // No scroll on click
             });
 
             tr.appendChild(td);
@@ -680,14 +870,15 @@ function renderRows(startDataRowIndex, count) {
     renderedRowCount += count;
 }
 
+
 function updateStats(data) {
     const rows = data.length - 1; // Exclude header
     const cols = data[0] ? data[0].length : 0;
     const cells = rows * cols;
 
-    statRows.textContent = rows.toLocaleString();
-    statCols.textContent = cols.toLocaleString();
-    statCells.textContent = cells.toLocaleString();
+    if (statRows) statRows.textContent = rows.toLocaleString();
+    if (statCols) statCols.textContent = cols.toLocaleString();
+    if (statCells) statCells.textContent = cells.toLocaleString();
 }
 
 function populateColumnSelects(headers) {
@@ -724,17 +915,21 @@ function showImportSection() {
 // Create New File
 function createNewFile() {
     if (confirm('Créer un nouveau fichier vide ? Les données actuelles seront perdues.')) {
-        // Create empty 10x10 grid
-        const emptyData = [
-            ['Colonne A', 'Colonne B', 'Colonne C', 'Colonne D', 'Colonne E'],
-            ...Array(20).fill(null).map(() => Array(5).fill(''))
-        ];
+        // Create extended empty grid for scrolling comfort
+        const cols = 26;
+        const rows = 200;
+        const headers = Array.from({ length: cols }, (_, i) => String.fromCharCode(65 + i));
 
-        window.workbookData = emptyData;
-        window.currentSheet = emptyData;
+        const data = [headers];
+        for (let i = 0; i < rows; i++) {
+            data.push(new Array(cols).fill(''));
+        }
+
+        window.workbookData = data;
+        window.currentSheet = data;
         window.filteredData = null;
 
-        displayData(emptyData);
+        displayData(data);
         showDataSection();
         exportBtn.disabled = false;
     }
@@ -751,8 +946,12 @@ function applySort() {
 
     // Sort rows
     rows.sort((a, b) => {
-        const aVal = a[columnIndex];
-        const bVal = b[columnIndex];
+        let aVal = a[columnIndex];
+        let bVal = b[columnIndex];
+
+        // Handle Rich Data Objects (extract value)
+        if (aVal && typeof aVal === 'object' && 'value' in aVal) aVal = aVal.value;
+        if (bVal && typeof bVal === 'object' && 'value' in bVal) bVal = bVal.value;
 
         // Try numeric comparison
         const aNum = parseFloat(aVal);
@@ -1081,32 +1280,6 @@ function closeAllModals() {
     });
 }
 
-// Auto Update Logic
-function initializeAutoUpdater() {
-    if (!window.electronAPI) return;
-
-    const updateModal = document.getElementById('update-modal');
-    const updateMessage = document.getElementById('update-message');
-    const restartBtn = document.getElementById('restart-btn');
-    const downloadProgress = document.getElementById('download-progress');
-
-    window.electronAPI.onUpdateAvailable(() => {
-        updateMessage.textContent = "Une nouvelle version a été détectée. Téléchargement automatique en cours...";
-        updateModal.classList.remove('hidden');
-        downloadProgress.style.display = 'block';
-    });
-
-    window.electronAPI.onUpdateDownloaded(() => {
-        updateMessage.textContent = "Mise à jour téléchargée ! Redémarrez pour l'appliquer.";
-        downloadProgress.style.display = 'none';
-        restartBtn.style.display = 'flex';
-    });
-
-    restartBtn.addEventListener('click', () => {
-        window.electronAPI.quitAndInstall();
-    });
-}
-
 // Folder Selection Logic
 function initializeFolderSelection() {
     if (!window.electronAPI) return;
@@ -1144,6 +1317,39 @@ function initializeFolderSelection() {
     });
 }
 
+// Auto Update Logic
+function initializeAutoUpdater() {
+    if (!window.electronAPI) return;
+
+    const updateModal = document.getElementById('update-modal');
+    const updateMessage = document.getElementById('update-message');
+    const restartBtn = document.getElementById('restart-btn');
+    const downloadProgress = document.getElementById('download-progress');
+
+    // Listen for update check start
+    window.electronAPI.onUpdateCheckStarted(() => {
+        console.log('✅ [AUTO-UPDATE] Update check initiated from main process!');
+    });
+
+    window.electronAPI.onUpdateAvailable(() => {
+        console.log('✅ [AUTO-UPDATE] Update available event received!');
+        updateMessage.textContent = "Une nouvelle version a été détectée. Téléchargement automatique en cours...";
+        updateModal.classList.remove('hidden');
+        downloadProgress.style.display = 'block';
+    });
+
+    window.electronAPI.onUpdateDownloaded(() => {
+        console.log('✅ [AUTO-UPDATE] Update downloaded event received!');
+        updateMessage.textContent = "Mise à jour téléchargée ! Redémarrez pour l'appliquer.";
+        downloadProgress.style.display = 'none';
+        restartBtn.style.display = 'flex';
+    });
+
+    restartBtn.addEventListener('click', () => {
+        window.electronAPI.quitAndInstall();
+    });
+}
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
     initializeSplashScreen();
@@ -1151,8 +1357,491 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeTheme();
     initializeGridInteractions(); // Initialize infinite scroll & interactions
     setupZoomInput(); // Initialize manual zoom input
+    initializeKeyboardNavigation(); // Initialize Excel-like keyboard navigation
     if (typeof initializeTabs === 'function') initializeTabs();
     if (typeof initializeFileTabs === 'function') initializeFileTabs();
+
+    // File Loaded Event
+    if (window.electronAPI && window.electronAPI.onFileImported) {
+        window.electronAPI.onFileImported((response) => {
+            if (response.success && response.data) {
+                // Handle Multi-Sheet Data
+                const sheets = response.sheets || [{ name: 'Données', data: response.data }];
+
+                window.allSheets = sheets;
+
+                // Select first sheet by default
+                const activeSheet = sheets[0];
+                window.workbookData = activeSheet.data;
+                window.currentSheet = activeSheet.data;
+                window.filteredData = null; // Reset filters
+
+                // Render Tabs
+                if (typeof renderSheetTabs === 'function') {
+                    renderSheetTabs(sheets);
+                }
+
+                // Trim empty rows BEFORE displaying
+                trimTrailingEmptyRows();
+
+                displayData(window.currentSheet);
+                showDataSection();
+                exportBtn.disabled = false;
+
+                if (typeof dashboardController !== 'undefined') {
+                    dashboardController.refreshDashboard();
+                }
+            } else {
+                alert('Erreur lors du traitement du fichier : ' + response.error);
+            }
+        });
+
+        // Handle File Updates (e.g. external save)
+        if (window.electronAPI.onFileUpdated) {
+            window.electronAPI.onFileUpdated((response) => {
+                if (response.success && response.data) {
+                    // Handle Multi-Sheet Data
+                    const sheets = response.sheets || [{ name: 'Données', data: response.data }];
+                    window.allSheets = sheets;
+
+                    // Select first sheet or keep current index if possible
+                    // For safety on update, valid to reset to 0 or keep context if mapped
+                    const activeSheet = sheets[0];
+                    window.workbookData = activeSheet.data;
+                    window.currentSheet = activeSheet.data;
+                    window.filteredData = null;
+
+                    // Render Tabs - CRITICAL FIX
+                    if (typeof renderSheetTabs === 'function') {
+                        renderSheetTabs(sheets);
+                    }
+
+                    trimTrailingEmptyRows();
+                    displayData(window.currentSheet);
+
+                    if (typeof dashboardController !== 'undefined') {
+                        dashboardController.refreshDashboard();
+                    }
+                }
+            });
+        }
+    }
+
     initializeAutoUpdater(); // Initialize Auto Updater
     initializeFolderSelection(); // Initialize Folder Selection
+
+    // Ensure we start with a scrollable sheet if empty
+    if (!window.currentSheet) {
+        createDefaultSheet();
+    }
 });
+
+function createDefaultSheet() {
+    const cols = 26;
+    const rows = 200; // Guaranteed scroll
+    const headers = Array.from({ length: cols }, (_, i) => String.fromCharCode(65 + i));
+    const data = [headers];
+    for (let i = 0; i < rows; i++) data.push(new Array(cols).fill(null));
+
+    window.workbookData = data;
+    window.currentSheet = data;
+
+    if (typeof displayData === 'function') {
+        displayData(data);
+    }
+
+    // Force switch to Data view
+    const sections = ['import-section', 'charts-section', 'dashboard-section'];
+    sections.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+    document.getElementById('data-section')?.classList.remove('hidden');
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-tab="data"]')?.classList.add('active');
+}
+
+// Function to render sheet tabs at the bottom
+function renderSheetTabs(sheets) {
+    let tabsBar = document.getElementById('sheet-tabs-bar');
+    if (!tabsBar) {
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) {
+            tabsBar = document.createElement('div');
+            tabsBar.id = 'sheet-tabs-bar';
+            tabsBar.className = 'sheet-tabs-bar';
+            tableContainer.appendChild(tabsBar);
+        } else {
+            return;
+        }
+    }
+
+    tabsBar.innerHTML = '';
+
+    // Hide tabs if only one sheet or less
+    // Hide tabs ONLY if no sheets
+    if (!sheets || sheets.length === 0) {
+        tabsBar.classList.add('hidden');
+        tabsBar.style.display = 'none';
+        return;
+    }
+
+    tabsBar.classList.remove('hidden');
+    tabsBar.style.display = 'flex';
+
+    sheets.forEach((sheet, index) => {
+        const tab = document.createElement('div');
+        tab.className = 'sheet-tab';
+        // Add Tooltip for long names
+        tab.title = sheet.name || `Feuille ${index + 1}`;
+
+        // Check if this sheet is the currently active one (by reference)
+        if (sheet.data === window.currentSheet) {
+            tab.classList.add('active');
+        } else if (index === 0 && !window.currentSheet) {
+            tab.classList.add('active'); // Fallback
+        }
+
+        tab.textContent = sheet.name || `Feuille ${index + 1}`;
+
+        tab.addEventListener('click', () => {
+            switchSheet(index);
+        });
+
+        tabsBar.appendChild(tab);
+    });
+}
+
+function switchToAdjacentSheet(direction) {
+    if (!window.allSheets || window.allSheets.length <= 1) return;
+
+    // Find current index
+    const currentIndex = window.allSheets.findIndex(s => s.data === window.currentSheet);
+    if (currentIndex === -1) return;
+
+    const newIndex = currentIndex + direction;
+    if (newIndex >= 0 && newIndex < window.allSheets.length) {
+        switchSheet(newIndex);
+    }
+}
+
+function switchSheet(index) {
+    if (!window.allSheets || !window.allSheets[index]) return;
+    const sheet = window.allSheets[index];
+
+    // 1. Save State of Current Sheet
+    const tableWrapper = document.querySelector('.table-wrapper');
+    const currentSheetIndex = window.allSheets.findIndex(s => s.data === window.currentSheet);
+
+    if (currentSheetIndex !== -1 && tableWrapper) {
+        window.sheetStates[currentSheetIndex] = {
+            scrollTop: tableWrapper.scrollTop,
+            scrollLeft: tableWrapper.scrollLeft,
+            activeRow: window.keyboardState.activeRow,
+            activeCol: window.keyboardState.activeCol,
+            // selectedCell is DOM, so we store indices
+        };
+    }
+
+    // 2. Update Active Tab UI
+    document.querySelectorAll('.sheet-tab').forEach((t, i) => {
+        if (i === index) t.classList.add('active');
+        else t.classList.remove('active');
+    });
+
+    console.log(`Switching to sheet index: ${index} (${sheet.name})`);
+
+    // 3. Switch Data
+    window.currentSheet = sheet.data;
+    window.workbookData = sheet.data;
+    window.filteredData = null; // Clear filters on switch
+
+    // 4. Re-render
+    trimTrailingEmptyRows();
+    displayData(window.currentSheet);
+
+    // 5. Restore State (if exists)
+    const savedState = window.sheetStates[index];
+    if (savedState) {
+        requestAnimationFrame(() => {
+            const wrapper = document.querySelector('.table-wrapper');
+            if (wrapper) {
+                wrapper.scrollTop = savedState.scrollTop;
+                wrapper.scrollLeft = savedState.scrollLeft;
+            }
+
+            // Restore Selection
+            const tr = document.getElementById('table-body').children[savedState.activeRow];
+            if (tr) {
+                const td = tr.children[savedState.activeCol];
+                if (td) {
+                    window.selectCell(td, false); // Don't force scroll, we just set scrollTop manually
+                    window.keyboardState.activeRow = savedState.activeRow;
+                    window.keyboardState.activeCol = savedState.activeCol;
+                }
+            }
+        });
+    } else {
+        // Default to first cell if no state
+        window.keyboardState.activeRow = 0;
+        window.keyboardState.activeCol = 0;
+        requestAnimationFrame(() => {
+            const firstCell = document.querySelector('#table-body tr:first-child td:first-child');
+            if (firstCell) window.selectCell(firstCell, true);
+            const wrapper = document.querySelector('.table-wrapper');
+            if (wrapper) {
+                wrapper.scrollTop = 0;
+                wrapper.scrollLeft = 0;
+            }
+        });
+    }
+}
+
+// Helper: Calculate contrast color (Black or White) for a given Hex background
+function getContrastColor(hex) {
+    if (!hex) return null;
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // YIQ equation
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#000000' : '#FFFFFF';
+}
+
+/* =========================================
+   Excel-like Keyboard Navigation System
+   ========================================= */
+
+window.keyboardState = {
+    activeRow: 0,
+    activeCol: 0
+};
+
+window.sheetStates = {}; // Stores state for each sheet index: { scrollTop, scrollLeft, activeRow, activeCol }
+
+function initializeKeyboardNavigation() {
+    // 1. Click Synchronization
+    document.getElementById('table-body').addEventListener('mousedown', (e) => {
+        const cell = e.target.closest('td');
+        if (!cell) return;
+        const row = cell.parentElement;
+        const body = row.parentElement;
+        if (body.id !== 'table-body') return;
+
+        const rows = Array.from(body.children);
+        const cells = Array.from(row.children);
+        window.keyboardState.activeRow = rows.indexOf(row);
+        window.keyboardState.activeCol = cells.indexOf(cell);
+
+        // Let default selection happen, then ensure we are focused
+    });
+
+    // 2. Global Key Listener
+    document.addEventListener('keydown', (e) => {
+        // Skip if focus is in an input (SearchBar, Zoom, etc)
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (!window.selectedCell) return;
+
+        const isEditing = window.selectedCell.isContentEditable;
+
+        // --- Edit Mode Handling ---
+        if (isEditing) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Commit Change
+                window.selectedCell.blur(); // Triggers blur listener which saves data
+                // Move selection (Shift+Enter = Up, Enter = Down)
+                moveSelection(e.shiftKey ? -1 : 1, 0);
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                window.selectedCell.blur();
+                moveSelection(0, e.shiftKey ? -1 : 1);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                // Cancel Edit (Restore is harder without history, but at least exit)
+                // For now, simple blur. 
+                window.selectedCell.blur();
+                // Refocus table wrapper to capture next keys
+                document.querySelector('.table-wrapper').focus();
+            }
+            // Allow arrows and text input to work normally inside the cell
+            return;
+        }
+
+        // --- Navigation Mode Handling ---
+        let dRow = 0;
+        let dCol = 0;
+        let handled = false;
+
+        switch (e.key) {
+            case 'ArrowUp': dRow = -1; handled = true; break;
+            case 'ArrowDown': dRow = 1; handled = true; break;
+            case 'ArrowLeft': dCol = -1; handled = true; break;
+            case 'ArrowRight': dCol = 1; handled = true; break;
+
+            case 'Tab':
+                dCol = e.shiftKey ? -1 : 1;
+                e.preventDefault();
+                handled = true;
+                break;
+
+            case 'Enter':
+                dRow = e.shiftKey ? -1 : 1;
+                e.preventDefault();
+                handled = true;
+                break;
+
+            case 'F2':
+                e.preventDefault();
+                enterEditMode();
+                return;
+
+            case 'Backspace':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    clearCellContent();
+                }
+                return;
+
+            case 'PageUp':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    switchToAdjacentSheet(-1);
+                    return;
+                }
+                break;
+
+            case 'PageDown':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    switchToAdjacentSheet(1);
+                    return;
+                }
+                break;
+        }
+
+        // Direct Typing (Overwrites cell)
+        if (!handled && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            // Check if it's a valid char (letters, numbers, symbols)
+            enterEditMode(true); // True = Clear first
+            // Note: The first char might be swallowed if we focus immediately. 
+            // Better UX: Programmatically set value to the char.
+            // But 'keypress' is deprecated. 
+            // Simple approach: Clear and Focus. User types char again? No, Excel types it.
+            // Advanced: 
+            window.selectedCell.textContent = e.key;
+            // Move cursor to end
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(window.selectedCell);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            e.preventDefault(); // Prevent double typing
+            return;
+        }
+
+        if (handled) {
+            e.preventDefault();
+            // Handle Ctrl Jump (Not implemented fully, just standard move for now)
+            // if (e.ctrlKey) ...
+
+            moveSelection(dRow, dCol);
+        }
+    });
+}
+
+function moveSelection(dRow, dCol) {
+    if (!window.currentSheet || !window.selectedCell) return;
+
+    let newRow = window.keyboardState.activeRow + dRow;
+    let newCol = window.keyboardState.activeCol + dCol;
+
+    // Boundaries
+    if (newRow < 0) newRow = 0;
+    if (newCol < 0) newCol = 0;
+
+    // Auto Expand Rows
+    const currentDataRows = document.getElementById('table-body').children.length;
+    if (newRow >= currentDataRows) {
+        addMoreRows(1);
+        // Wait for render
+        setTimeout(() => {
+            // Re-fetch because DOM updated
+            const tr = document.getElementById('table-body').children[newRow];
+            if (tr && tr.children[newCol]) {
+                finishMove(newRow, newCol, tr.children[newCol]);
+            }
+        }, 50);
+        return;
+    }
+
+    // Auto Expand Columns (Right Arrow) - Excel usually adds cols if you go far right? 
+    // User requested "Limits of grid respected" but also "Infinite Scroll".
+    // Existing code added cols on ArrowRight. I will keep that.
+    const currentCols = window.currentSheet[0].length;
+    if (newCol >= currentCols) {
+        addMoreCols(1);
+        setTimeout(() => {
+            const tr = document.getElementById('table-body').children[newRow];
+            if (tr && tr.children[newCol]) {
+                finishMove(newRow, newCol, tr.children[newCol]);
+            }
+        }, 50);
+        return;
+    }
+
+    // Normal Move
+    const tr = document.getElementById('table-body').children[newRow];
+    if (tr) {
+        const td = tr.children[newCol];
+        if (td) {
+            finishMove(newRow, newCol, td);
+        }
+    }
+}
+
+function finishMove(row, col, cell) {
+    window.keyboardState.activeRow = row;
+    window.keyboardState.activeCol = col;
+    if (window.selectCell) window.selectCell(cell, true);
+}
+
+function enterEditMode(clear = false) {
+    if (!window.selectedCell) return;
+    const cell = window.selectedCell;
+    cell.contentEditable = true;
+    cell.focus();
+    cell.classList.add('editing');
+    if (clear) {
+        cell.textContent = '';
+    }
+}
+
+function clearCellContent() {
+    if (!window.selectedCell) return;
+    window.selectedCell.textContent = '';
+
+    // Update data model manually since blur won't trigger if we don't focus/blur
+    // But usually we just update DOM and let the separate blur handler do it? 
+    // The existing blur handler (line 784) listens to 'blur' on td.
+    // If we simply change textContentprogrammatically, blur IS NOT triggered.
+    // So we must update data manually.
+    const rowIdx = window.keyboardState.activeRow; // Data index starts at 0 (Row 1 in sheet)
+    const colIdx = window.keyboardState.activeCol;
+
+    // window.currentSheet[0] is Header.
+    // window.currentSheet[1] is Data Row 0.
+    const sheetRowIdx = rowIdx + 1;
+
+    if (window.currentSheet[sheetRowIdx]) {
+        const cellData = window.currentSheet[sheetRowIdx][colIdx];
+        if (typeof cellData === 'object' && cellData !== null) {
+            cellData.value = '';
+        } else {
+            window.currentSheet[sheetRowIdx][colIdx] = '';
+        }
+    }
+}

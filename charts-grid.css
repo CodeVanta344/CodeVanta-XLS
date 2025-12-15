@@ -1,0 +1,61 @@
+/* Store Charts Grid Layout - NUCLEAR OPTION */
+/* v1.2 Overwrite to force layout */
+
+.store-charts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 2rem !important;
+    padding: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure absolute full width for all parents */
+.sheet-charts-section,
+.sheet-charts-wrapper,
+#auto-charts-container,
+.charts-section,
+#charts-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Allow hiding despite !important block */
+.sheet-charts-section[style*="display: none"],
+.chart-card[style*="display: none"] {
+    display: none !important;
+}
+
+/* Force card to behave */
+.chart-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+}
+
+.chart-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.chart-canvas-wrapper {
+    position: relative;
+    width: 100% !important;
+    flex: 1;
+    min-height: 250px;
+    /* Ensure height */
+}
+
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+}

@@ -220,9 +220,9 @@ body {
 }
 
 .header-content {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -372,9 +372,9 @@ body {
 
 /* Main Content */
 .app-main {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: var(--spacing-xl) var(--spacing-lg);
+    padding: var(--spacing-md);
 }
 
 /* Import Section */
@@ -586,30 +586,44 @@ body {
 
 /* Table */
 .table-container {
-    padding: var(--spacing-lg);
-    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 600px;
+    /* Ensure global minimum */
 }
 
 .table-wrapper {
-    overflow: auto;
-
-    max-height: calc(100vh - 110px);
-    /* Adjust based on header/toolbar height */
+    flex: 1;
+    /* Grow to fill container */
+    overflow-y: scroll !important;
+    height: auto;
+    max-height: 60vh !important;
+    /* Force constraint */
+    min-height: 300px;
     position: relative;
     cursor: grab;
-    /* Cursor for dragging */
+    scroll-behavior: auto;
+    /* touch-action: none; Removed to allow native scroll */
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    overscroll-behavior: none;
+    pointer-events: auto;
 }
 
-.table-wrapper:active {
-    cursor: grabbing;
+.table-wrapper.active {
+    cursor: grabbing !important;
 }
+
+
 
 /* Container to handle the zoomed content */
 .zoom-container {
     transform-origin: top left;
     transition: transform 0.1s ease-out;
     /* Smoother zoom */
-    display: inline-block;
+    display: block;
     /* Allow it to grow */
     min-width: 100%;
 }
@@ -1171,18 +1185,106 @@ td.editing {
     cursor: text !important;
 }
 
-/* Selected Cell Highlighting */
-td.selected-cell {
-    outline: 2px solid var(--accent-primary) !important;
-    background-color: transparent !important;
+/* Multi-Sheet Tabs Bar (Excel Style) */
+.sheet-tabs-bar {
+    display: flex;
+    background: #f3f3f3;
+    border-top: 1px solid #dcdcdc;
+    padding: 0 4px;
+    height: 32px;
+    align-items: flex-end;
+    overflow-x: auto;
+    flex-shrink: 0;
+    width: 100%;
+    z-index: 100;
+}
+
+/* Hide scrollbar for tabs */
+.sheet-tabs-bar::-webkit-scrollbar {
+    height: 4px;
+}
+
+.sheet-tabs-bar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sheet-tabs-bar::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+}
+
+.sheet-tab {
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px 4px 0 0;
+    margin-right: 2px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #444;
+    transition: background 0.1s;
+    min-width: 60px;
+    height: 28px;
+    user-select: none;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sheet-tab:hover {
+    background: #e1e1e1;
+    color: #000;
+}
+
+.sheet-tab.active {
+    background: #ffffff;
+    color: #217346;
+    font-weight: 600;
+    box-shadow: 0 2px 0 #ffffff;
     position: relative;
     z-index: 10;
 }
 
-td.editing {
-    outline: 2px solid var(--accent-primary) !important;
-    background-color: var(--bg-primary) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 11;
-    cursor: text !important;
+/* Green underline indicator */
+.sheet-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #217346;
+    border-radius: 0;
+}
+
+/* Multi-Sheet Charts Layout */
+.sheet-charts-section {
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sheet-charts-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.sheet-charts-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+    padding-left: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.sheet-charts-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
 }

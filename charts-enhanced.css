@@ -78,9 +78,10 @@
 }
 
 #auto-charts-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-    gap: var(--spacing-lg);
+    display: block;
+    /* Changed from grid to allow full width sections */
+    /* grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); Removed */
+    /* gap: var(--spacing-lg); Moved to inner container */
 }
 
 /* Enhanced Chart Card */

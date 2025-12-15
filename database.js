@@ -46,7 +46,7 @@ class DataManager {
         return this.data.files.find(f => f.filepath === filePath);
     }
 
-    addFile(filename, filepath, fileHash, rowCount) {
+    addFile(filename, filepath, fileHash, rowCount, sheets = []) {
         const file = {
             id: this.data.files.length + 1,
             filename,
@@ -55,25 +55,31 @@ class DataManager {
             import_date: new Date().toISOString(),
             last_modified: new Date().toISOString(),
             row_count: rowCount,
-            status: 'imported'
+            status: 'imported',
+            sheets: sheets // Store sheets metadata/data
         };
         this.data.files.push(file);
         this.saveData();
         return file.id;
     }
 
-    updateFile(fileId, fileHash, rowCount) {
+    updateFile(fileId, fileHash, rowCount, sheets = []) {
         const file = this.data.files.find(f => f.id === fileId);
         if (file) {
             file.file_hash = fileHash;
             file.row_count = rowCount;
             file.last_modified = new Date().toISOString();
+            file.sheets = sheets; // Update sheets
             this.saveData();
         }
     }
 
     addColumnsMetadata(fileId, columns) {
-        // Stored with data rows
+        const file = this.data.files.find(f => f.id === fileId);
+        if (file) {
+            file.columns = columns;
+            this.saveData();
+        }
     }
 
     addDataRows(fileId, rows) {
@@ -81,7 +87,8 @@ class DataManager {
             this.data.dataRows.push({
                 file_id: fileId,
                 row_index: row.index,
-                row_data: row.data
+                row_data: row.data,
+                row_styles: row.styles // New field for style metadata
             });
         });
         this.saveData();
@@ -118,7 +125,8 @@ class DataManager {
                 filename: file ? file.filename : 'Unknown',
                 import_date: file ? file.import_date : null,
                 row_index: row.row_index,
-                row_data: row.row_data
+                row_data: row.row_data,
+                row_styles: row.row_styles // Return styles
             };
         });
     }

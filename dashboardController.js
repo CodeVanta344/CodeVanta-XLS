@@ -121,9 +121,44 @@ class DashboardController {
 
                 if (fileData.length > 0) {
                     // Transformer en format tableau
-                    const firstRow = fileData[0].row_data;
-                    const headers = Object.keys(firstRow);
-                    const rows = fileData.map(d => Object.values(d.row_data));
+                    let headers = [];
+                    // Use stored column metadata if available (preserves order)
+                    if (file.columns && file.columns.length > 0) {
+                        headers = file.columns
+                            .sort((a, b) => a.index - b.index)
+                            .map(c => c.name);
+
+                        // Verify that headers actually exist in the data
+                        const sampleRow = fileData[0].row_data;
+                        const validHeaders = headers.filter(h => Object.prototype.hasOwnProperty.call(sampleRow, h));
+
+                        if (validHeaders.length < headers.length * 0.5) {
+                            console.warn('Metadata mismatch: Falling back to data keys');
+                            headers = getSortedKeys(fileData[0].row_data);
+                        }
+                    } else {
+                        headers = getSortedKeys(fileData[0].row_data);
+                    }
+
+                    function getSortedKeys(rowData) {
+                        return Object.keys(rowData).sort((a, b) => {
+                            const isANum = !isNaN(parseFloat(a)) && isFinite(a);
+                            const isBNum = !isNaN(parseFloat(b)) && isFinite(b);
+                            if (isANum && !isBNum) return 1;
+                            if (!isANum && isBNum) return -1;
+                            if (isANum && isBNum) return parseFloat(a) - parseFloat(b);
+                            return String(a).localeCompare(String(b));
+                        });
+                    }
+
+                    // Map rows strictly based on headers array
+                    const rows = fileData.map(d => {
+                        return headers.map(h => ({
+                            value: d.row_data[h],
+                            style: d.row_styles ? d.row_styles[h] : null
+                        }));
+                    });
+
                     const formattedData = [headers, ...rows];
 
                     // Ajouter l'onglet
@@ -182,18 +217,15 @@ class DashboardController {
     }
 
     async updateCharts() {
-        // Pour l'instant, créer un graphique simple montrant le nombre de lignes par fichier
         const chartCanvas = document.getElementById('files-chart');
         if (!chartCanvas) return;
 
         const ctx = chartCanvas.getContext('2d');
 
-        // Détruire le graphique existant
         if (this.filesChart) {
             this.filesChart.destroy();
         }
 
-        // Préparer les données
         const labels = this.files.slice(0, 10).map(f => f.filename.substring(0, 20));
         const data = this.files.slice(0, 10).map(f => f.row_count);
 
@@ -213,16 +245,8 @@ class DashboardController {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         } catch (err) {
@@ -238,37 +262,23 @@ class DashboardController {
     }
 
     showNotification(message, type = 'info') {
-        // Créer une notification toast
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
-
         document.body.appendChild(notification);
-
-        // Animation d'entrée
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-
-        // Retirer après 3 secondes
+        setTimeout(() => { notification.classList.add('show'); }, 10);
         setTimeout(() => {
             notification.classList.remove('show');
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
+            setTimeout(() => { document.body.removeChild(notification); }, 300);
         }, 3000);
     }
 
     switchView(view) {
         this.currentView = view;
-
-        // Mettre à jour la navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
         document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
-
-        // Afficher la vue correspondante
         document.querySelectorAll('section[id$="-section"]').forEach(section => {
             section.classList.add('hidden');
         });
@@ -282,23 +292,32 @@ class DashboardController {
     }
 
     async loadDataView() {
-        // Charger les données brutes dans le tableau
         if (!window.electronAPI) return;
 
         const data = await window.electronAPI.getAllData(100, 0);
 
-        // Utiliser la fonction existante displayData
         if (data.length > 0) {
-            // Transformer les données pour le format attendu
             const firstRow = data[0].row_data;
             const headers = Object.keys(firstRow);
-            const rows = data.map(d => Object.values(d.row_data));
-
+            const rows = data.map(d => headers.map(h => d.row_data[h]));
             const formattedData = [headers, ...rows];
-            // Update global state for app.js functions (sort, filter, etc.)
+
             if (typeof window !== 'undefined') {
                 window.currentSheet = formattedData;
-                window.workbookData = formattedData; // Also update workbookData for consistency
+                window.workbookData = formattedData;
+
+                if (!window.allSheets || window.allSheets.length === 0) {
+                    const filename = data[0].filename || 'Données';
+                    window.allSheets = [{
+                        name: filename,
+                        data: formattedData
+                    }];
+                }
+            }
+
+            // Fix: Trim trailing empty rows to prevent UI from extending unnecessarily
+            if (typeof trimTrailingEmptyRows === 'function') {
+                trimTrailingEmptyRows();
             }
 
             if (typeof displayData === 'function') {

@@ -1,8 +1,12 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
+    // Utilities
+    getPathForFile: (file) => webUtils.getPathForFile(file),
+    log: (msg) => ipcRenderer.send('log', msg),
+
     // Window controls
     minimizeWindow: () => ipcRenderer.send('window-minimize'),
     maximizeWindow: () => ipcRenderer.send('window-maximize'),
@@ -20,6 +24,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAllData: (limit, offset) => ipcRenderer.invoke('get-all-data', limit, offset),
     getAllColumns: () => ipcRenderer.invoke('get-all-columns'),
     executeQuery: (sql, params) => ipcRenderer.invoke('execute-query', sql, params),
+
+    // Import
+    parseFile: (path) => ipcRenderer.invoke('parse-excel-file', path),
 
     // License management
     getLicense: () => ipcRenderer.invoke('get-license'),
@@ -39,6 +46,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onRefreshDashboard: (callback) => ipcRenderer.on('refresh-dashboard', callback),
 
     // Auto Update
+    onUpdateCheckStarted: (callback) => ipcRenderer.on('update-check-started', callback),
     onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
     onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
     quitAndInstall: () => ipcRenderer.invoke('quit-and-install')

@@ -12,6 +12,17 @@ const log = require('electron-log');
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 log.info('App starting...');
+console.log('[AUTO-UPDATE] Initializing auto-updater...');
+
+// Configure update feed (GitHub Releases)
+autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'CodeVanta344',
+    repo: 'CodeVanta-XLS'
+});
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+console.log('[AUTO-UPDATE] Feed URL configured for CodeVanta344/CodeVanta-XLS');
 
 const store = new Store();
 
@@ -43,6 +54,9 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+
+        // TEMPORAIRE: Ouvrir DevTools pour déboguer l'auto-update
+        mainWindow.webContents.openDevTools();
 
         // Vérifier si un dossier est configuré
         const watchFolder = store.get('watchFolder');
@@ -80,6 +94,11 @@ function createWindow() {
         const { shell } = require('electron');
         await shell.openExternal(url);
         return { success: true };
+    });
+
+    // DEBUG: Remote Logging
+    ipcMain.on('log', (event, message) => {
+        console.log('[RENDERER]', message);
     });
 
     mainWindow.on('closed', () => {
@@ -183,7 +202,13 @@ function startWatching(folderPath) {
 
     // Process existing files immediately
     console.log('Processing existing Excel files...');
-    dataExtractor.processExistingFiles(folderPath).then(() => {
+    dataExtractor.processExistingFiles(folderPath, (result) => {
+        if (result.success) {
+            console.log(`[STARTUP] Emitting data for: ${result.filename}`);
+            mainWindow.webContents.send('file-imported', result);
+            mainWindow.webContents.send('refresh-dashboard');
+        }
+    }).then(() => {
         console.log('Initial file processing complete');
         mainWindow.webContents.send('refresh-dashboard');
     });
@@ -219,6 +244,36 @@ ipcMain.handle('get-watch-folder', () => {
     return store.get('watchFolder', null);
 });
 
+// Parse Excel file manually (from Import Button)
+ipcMain.handle('parse-excel-file', async (event, filePath) => {
+    console.log('[IPC] Manual file parse requested:', filePath);
+
+    // Ensure DataManager is initialized
+    if (!dataManager) {
+        dataManager = new DataManager();
+    }
+
+    // Ensure DataExtractor is initialized
+    if (!dataExtractor) {
+        dataExtractor = new DataExtractor(dataManager);
+    }
+
+    try {
+        const result = await dataExtractor.processFile(filePath);
+        if (result.success) {
+            // Notify frontend
+            mainWindow.webContents.send('file-imported', result);
+            mainWindow.webContents.send('refresh-dashboard');
+            return { success: true };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        console.error('IPC parse error:', error);
+        return { success: false, error: error.message };
+    }
+});
+
 // License Management IPC Handlers
 ipcMain.handle('get-license', async () => {
     return store.get('license', null);
@@ -235,25 +290,39 @@ ipcMain.handle('remove-license', async () => {
 });
 
 // Auto-updater events
-autoUpdater.on('update-available', () => {
-    log.info('Update available.');
+autoUpdater.on('checking-for-update', () => {
+    log.info('Checking for update...');
+    console.log('[AUTO-UPDATE] Checking for update...');
+});
+
+autoUpdater.on('update-available', (info) => {
+    log.info('Update available.', info);
+    console.log('[AUTO-UPDATE] Update available:', info);
     mainWindow.webContents.send('update-available');
 });
 
-autoUpdater.on('update-downloaded', () => {
-    log.info('Update downloaded.');
+autoUpdater.on('update-not-available', (info) => {
+    log.info('Update not available.', info);
+    console.log('[AUTO-UPDATE] No update available:', info);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+    log.info('Update downloaded.', info);
+    console.log('[AUTO-UPDATE] Update downloaded:', info);
     mainWindow.webContents.send('update-downloaded');
 });
 
 autoUpdater.on('error', (err) => {
-    log.error('Error in auto-updater. ' + err);
+    log.error('Error in auto-updater:', err);
+    console.error('[AUTO-UPDATE] Error:', err);
 });
 
 // Auto-updater IPC
 ipcMain.handle('check-for-updates', () => {
-    if (process.env.NODE_ENV !== 'development') {
-        autoUpdater.checkForUpdatesAndNotify();
-    }
+    // TEMPORAIRE: Activé pour tester les mises à jour en dev
+    // if (process.env.NODE_ENV !== 'development') {
+    autoUpdater.checkForUpdatesAndNotify();
+    // }
 });
 
 ipcMain.handle('quit-and-install', () => {
@@ -263,9 +332,25 @@ ipcMain.handle('quit-and-install', () => {
 // App lifecycle
 app.whenReady().then(() => {
     createWindow();
-    if (process.env.NODE_ENV !== 'development') {
-        autoUpdater.checkForUpdatesAndNotify();
-    }
+
+    // Check for updates after window is ready
+    setTimeout(() => {
+        console.log('[AUTO-UPDATE] Starting update check...');
+        log.info('Starting update check...');
+
+        // Send visible message to renderer
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('update-check-started');
+        }
+
+        try {
+            autoUpdater.checkForUpdatesAndNotify();
+            console.log('[AUTO-UPDATE] checkForUpdatesAndNotify() called successfully');
+        } catch (error) {
+            console.error('[AUTO-UPDATE] Error calling checkForUpdatesAndNotify():', error);
+            log.error('Error calling checkForUpdatesAndNotify():', error);
+        }
+    }, 3000); // Wait 3 seconds after window creation
 });
 
 app.on('window-all-closed', () => {

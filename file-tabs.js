@@ -10,6 +10,24 @@ function initializeFileTabs() {
         window.electronAPI.onFileImported((fileInfo) => {
             addFileTab(fileInfo);
         });
+
+        // Listen for file updates (Startup / Watch)
+        if (window.electronAPI.onFileUpdated) {
+            window.electronAPI.onFileUpdated((fileInfo) => {
+                // Check if we need to update existing or add new
+                addFileTab(fileInfo);
+            });
+        }
+
+        // Fetch initial files (Fix for startup race condition)
+        if (window.electronAPI.getAllFiles) {
+            window.electronAPI.getAllFiles().then(files => {
+                if (files && files.length > 0) {
+                    console.log('🔄 [FILE-TABS] Loading initial files:', files.length);
+                    files.forEach(file => addFileTab(file));
+                }
+            }).catch(console.error);
+        }
     }
 }
 
@@ -19,6 +37,9 @@ function addFileTab(fileInfo) {
     const existingFile = openFiles.find(f => f.name === fileInfo.filename);
     if (existingFile) {
         console.log(`File tab already exists: ${fileInfo.filename}`);
+        // Update data if needed
+        existingFile.data = fileInfo.data;
+        existingFile.sheets = fileInfo.sheets; // Store sheets
         switchToFile(existingFile.id);
         return;
     }
@@ -29,6 +50,7 @@ function addFileTab(fileInfo) {
         id: fileId,
         name: fileInfo.filename || 'Nouveau fichier',
         data: fileInfo.data || null,
+        sheets: fileInfo.sheets || null, // Store sheets
         active: true
     });
 
@@ -49,11 +71,21 @@ function addFileTab(fileInfo) {
     if (fileInfo.data) {
         workbookData = fileInfo.data;
         window.currentSheet = fileInfo.data;
+
+        // Populate global sheets for app.js logic
+        if (fileInfo.sheets) {
+            window.allSheets = fileInfo.sheets;
+            // Render Sheet Tabs (Months)
+            if (typeof renderSheetTabs === 'function') {
+                renderSheetTabs(fileInfo.sheets);
+            }
+        }
+
         displayData(fileInfo.data);
         showDataSection();
     }
 }
-
+// ...
 // Render file tabs UI
 function renderFileTabs() {
     let tabsContainer = document.getElementById('file-tabs-container');
@@ -138,7 +170,16 @@ function switchToFile(fileId) {
     // Load file data
     if (file.data) {
         workbookData = file.data;
-        currentSheet = file.data;
+        window.currentSheet = file.data;
+
+        // Restore sheets context
+        if (file.sheets) {
+            window.allSheets = file.sheets;
+            if (typeof renderSheetTabs === 'function') {
+                renderSheetTabs(file.sheets);
+            }
+        }
+
         displayData(file.data);
     }
 }

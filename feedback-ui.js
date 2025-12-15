@@ -180,16 +180,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add feedback class to all buttons
-    document.querySelectorAll('button').forEach(btn => {
-        if (!btn.classList.contains('btn-feedback')) {
-            btn.classList.add('btn-feedback');
-        }
-    });
+    // Button feedback removed as per user request
 
-    // Add interactive class to cards
+    // Add interactive class to cards (excluding the main data table container)
     document.querySelectorAll('.glass-card, .stat-card, .chart-card').forEach(card => {
-        card.classList.add('interactive');
+        if (!card.classList.contains('table-container')) {
+            card.classList.add('interactive');
+        }
     });
 });
 
