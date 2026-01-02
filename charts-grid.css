@@ -3,8 +3,8 @@
 
 .store-charts-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-    gap: 2rem !important;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+    gap: 1rem !important;
     padding: 1rem !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -12,6 +12,7 @@
 }
 
 /* Ensure absolute full width for all parents */
+.app-main,
 .sheet-charts-section,
 .sheet-charts-wrapper,
 #auto-charts-container,
@@ -22,6 +23,13 @@
     display: block !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
+}
+
+/* RESPECT HIDDEN STATE */
+.charts-section.hidden,
+#charts-section.hidden,
+#auto-charts-container.hidden {
+    display: none !important;
 }
 
 /* Allow hiding despite !important block */

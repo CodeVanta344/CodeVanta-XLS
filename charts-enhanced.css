@@ -137,7 +137,9 @@
 
 .chart-canvas-wrapper {
     position: relative;
-    height: 300px;
+    height: 300px !important;
+    min-height: 300px !important;
+    max-height: 300px !important;
     padding: var(--spacing-lg);
     background: white;
 }
@@ -150,7 +152,14 @@
 .charts-empty-state {
     text-align: center;
     padding: var(--spacing-xl) var(--spacing-lg);
-    color: var(--text-tertiary);
+    color: var(--text-primary);
+    /* Darker text */
+    background: #fff0f0;
+    /* Light red bg */
+    border: 2px solid #ff4d4d;
+    /* Red border */
+    border-radius: var(--radius-md);
+    margin: 2rem;
 }
 
 .charts-empty-state svg {

@@ -54,10 +54,19 @@ function switchTab(tabName) {
 // Multi-Sheet Charts Generation
 let autoCharts = [];
 let allChartsData = []; // Now stores { sheetIndex, sheetName, colData }
+let generateChartsDebounce = null;
 
 function generateAutoCharts() {
+    // DEBOUNCE: Prevent rapid firing
+    if (generateChartsDebounce) clearTimeout(generateChartsDebounce);
+    generateChartsDebounce = setTimeout(doGenerateAutoCharts, 300);
+}
+
+function doGenerateAutoCharts() {
     const container = document.getElementById('auto-charts-container');
     if (!container) return;
+
+    console.log('[AutoCharts] Starting Generation...');
 
     // Clear existing charts
     autoCharts.forEach(chart => chart.destroy());
@@ -66,9 +75,19 @@ function generateAutoCharts() {
     container.innerHTML = '';
 
     // Determine sheets to process
-    const sheets = window.allSheets && window.allSheets.length > 0
+    let sheets = window.allSheets && window.allSheets.length > 0
         ? window.allSheets
         : (window.currentSheet ? [{ name: 'Données', data: window.currentSheet }] : []);
+
+    // FIX: Deduplicate sheets based on name to prevent accumulation
+    const uniqueNames = new Set();
+    sheets = sheets.filter(s => {
+        if (uniqueNames.has(s.name)) return false;
+        uniqueNames.add(s.name);
+        return true;
+    });
+
+    console.log('[AutoCharts] Sheets to process:', sheets.length);
 
     if (sheets.length === 0) {
         renderEmptyState(container);
@@ -161,8 +180,42 @@ function findHeaderRow(data) {
         });
 
         const avgLen = textCount > 0 ? totalLen / textCount : 0;
-        // Score logic
-        const score = textCount * (Math.log(avgLen + 1) + 1);
+
+        // Uniqueness Check (Penalize merged titles repeated across columns)
+        const uniqueValues = new Set();
+        row.forEach(cell => {
+            let val = cell;
+            if (val && typeof val === 'object') val = val.value;
+            if (val) uniqueValues.add(String(val).trim());
+        });
+        const uniqueRatio = filledCount > 0 ? uniqueValues.size / filledCount : 0;
+
+        // Score logic: Favor Text + Length + Uniqueness. Heavily penalize duplicates IF they are long (merged titles).
+        let score = textCount * (Math.log(avgLen + 1) + 1);
+
+        // Only penalize low uniqueness if the text is LONG (likely a title row like "Suivi des objectifs...")
+        if (uniqueRatio < 0.5 && avgLen > 15) {
+            score *= 0.1; // Hard penalty for repeated titles
+        } else if (uniqueRatio < 0.8) {
+            // Mild penalty for other repetitions
+            score *= 0.8;
+        }
+
+        // KEYWORD BONUS: Strongly favor rows that actually contain the headers we need
+        let keywordBonus = 0;
+        row.forEach(cell => {
+            let val = cell;
+            if (val && typeof val === 'object') val = val.value;
+            const str = String(val || '').trim().toLowerCase();
+
+            // Only boost SHORT strings (avoid boosting the long title sentence)
+            if (str.length > 0 && str.length < 20) {
+                if (['ca', 'objectif', 'obj', 'realise', 'réalisé', 'budget', 'prevu', 'prévu'].some(k => str === k || str.includes(k))) {
+                    keywordBonus += 20; // Huge bonus per match
+                }
+            }
+        });
+        score += keywordBonus;
 
         if (score > maxScore) {
             maxScore = score;
@@ -177,15 +230,97 @@ function findHeaderRow(data) {
 }
 
 function generateChartsForSheet(sheet, container, sheetIndex) {
+    // Debug Data Dump - REMOVED for clarity
+
+    // BLOCK DETECTION STRATEGY (For Report-style files)
+    // Structure detected: 
+    // Row N: Store Name ("GRIM PASSION...")
+    // Row N+1: "CA REALISE" | Val1 | Val2...
+    // Row N+2: "OBJECTIF" | Val1 | Val2...
+
+    let workingData = sheet.data;
+
+    let blockData = [];
+    if (sheet.data && sheet.data.length > 0) {
+        for (let i = 0; i < sheet.data.length; i++) {
+            const row = sheet.data[i];
+            // Relaxed Detection: Scan ENTIRE row for keywords
+            const rowStr = row.map(cell =>
+                String((cell && typeof cell === 'object' ? cell.value : cell) || '').toLowerCase().trim()
+            ).join(' ');
+
+            // Trigger on "CA Row" - Using normalize logic for spacing robustness
+            const normalizedRow = rowStr.replace(/\s+/g, ' ');
+            if (normalizedRow.includes('ca realise') || normalizedRow.includes('ca réalisé')) {
+                // Look for Name in previous row(s)
+                let name = `Store ${blockData.length + 1}`;
+                if (i > 0) {
+                    const prevRow = sheet.data[i - 1];
+                    const prevCell = (prevRow[0] && typeof prevRow[0] === 'object' ? prevRow[0].value : prevRow[0]);
+                    if (prevCell) name = String(prevCell).trim();
+                }
+
+                // Extract CA Value (heuristic: max value in row, or last value)
+                const extractValue = (r) => {
+                    const nums = r.slice(1).map(c => {
+                        let v = (c && typeof c === 'object' ? c.value : c);
+                        if (typeof v === 'string') v = v.replace(/,/g, '.').replace(/\s/g, '');
+                        return parseFloat(v);
+                    }).filter(n => !isNaN(n));
+                    // FIX: Take FIRST value (usually the Store's value, not the total/meta data at the end)
+                    return nums.length > 0 ? nums[0] : 0;
+                };
+
+                const caVal = extractValue(row);
+
+
+
+                // Look for Objectif in next row
+                let objVal = 0;
+                if (i + 1 < sheet.data.length) {
+                    const nextRow = sheet.data[i + 1];
+                    const nextRowStr = nextRow.map(cell =>
+                        String((cell && typeof cell === 'object' ? cell.value : cell) || '').toLowerCase().trim()
+                    ).join(' ');
+
+                    if (nextRowStr.replace(/\s+/g, ' ').includes('objectif')) {
+                        objVal = extractValue(nextRow);
+                    }
+                }
+
+                if (caVal > 0 || objVal > 0) {
+                    blockData.push({
+                        name: name,
+                        ca: caVal,
+                        percent: objVal > 0 ? (caVal / objVal) * 100 : 0,
+                        obj: objVal
+                    });
+                }
+            }
+        }
+    }
+
+    // If blocks found, force formatting and skip standard detection
+    if (blockData.length > 0) {
+        console.info(`[AutoCharts] Detected ${blockData.length} store blocks in sheet '${sheet.name}'`);
+        // Synthesize a clean table for the rest of the app to consume
+        // Apply the synthesized table (Local copy only, do not mutate original sheet)
+        workingData = [
+            ['Magasin', 'CA Réalisé', 'Objectif'], // Header
+            ...blockData.map(d => [d.name, d.ca, d.obj])
+        ];
+        // Continue to standard processing (which will now work perfectly)
+    }
+
     // Dynamic Header Detection
-    const headerRowIndex = findHeaderRow(sheet.data);
+    const headerRowIndex = findHeaderRow(workingData);
 
     // "System" headers (raw objects from that row)
-    const systemHeaders = sheet.data[headerRowIndex];
+    const systemHeaders = workingData[headerRowIndex];
     // "User" headers (raw objects from that row)
-    const attributeNames = sheet.data[headerRowIndex];
+    const attributeNames = workingData[headerRowIndex];
     // Data Rows (start immediately after header)
-    let dataRows = sheet.data.slice(headerRowIndex + 1);
+    let dataRows = workingData.slice(headerRowIndex + 1);
 
     // FILTER: Remove rows where ANY of the first 5 columns contain "Ligne XX"
     dataRows = dataRows.filter(row => {
@@ -273,9 +408,13 @@ function generateChartsForSheet(sheet, container, sheetIndex) {
         }
     });
 
+    console.log('Numeric columns found:', numericColumns.length, 'for sheet:', sheetIndex);
+
     // Render charts for this sheet
     if (numericColumns.length >= 1) {
-        renderStoreCharts(sheet, container, sheetIndex);
+        // Pass a proxy sheet with the working data to avoid mutating the original
+        const proxySheet = { ...sheet, data: workingData };
+        renderStoreCharts(proxySheet, container, sheetIndex);
     }
 }
 
@@ -289,29 +428,53 @@ function renderStoreCharts(sheet, container, sheetIndex) {
     });
 
     // 2. Column Identification Handlers
-    const findCol = (keywords) => {
+    const findCol = (keywords, excludeKeywords = []) => {
         return headers.findIndex(h => {
             const lower = String(h).toLowerCase();
-            return keywords.some(k => lower.includes(k.toLowerCase()));
+            const matches = keywords.some(k => lower.includes(k.toLowerCase()));
+            if (!matches) return false;
+            if (excludeKeywords.length > 0) {
+                if (excludeKeywords.some(ex => lower.includes(ex.toLowerCase()))) return false;
+            }
+            return true;
         });
     };
 
-    // Strict Keywords based on "CA Réalisé" and "Objectif"
-    const caIndex = findCol(['ca réalisé', "chiffre d'affaires", 'ca', 'realise', 'réalisé']);
-    const objIndex = findCol(['objectif', 'budget', 'prevu', 'prévu', 'obj']);
+    // Strict Keywords with Exclusion to avoid "Objectif CA" being picked as CA
+    const caIndex = findCol(
+        ['ca réalisé', "chiffre d'affaires", 'ca', 'realise', 'réalisé'],
+        ['objectif', 'budget', 'prevu', 'prévu']
+    );
+    const objIndex = findCol(
+        ['objectif', 'budget', 'prevu', 'prévu', 'obj'],
+        ['realise', 'réalisé'] // Optional: usually Objectif doesn't contain Realise
+    );
+
+    // SAFETY CHECK: If both detected the same column, force searching for a different Objectif column
+    if (caIndex !== -1 && caIndex === objIndex) {
+        objIndex = headers.findIndex((h, idx) => {
+            if (idx === caIndex) return false; // Skip the CA column
+            const lower = String(h).toLowerCase();
+            return ['objectif', 'budget', 'prevu', 'prévu', 'obj'].some(k => lower.includes(k));
+        });
+    }
 
     if (caIndex === -1 || objIndex === -1) {
-        container.innerHTML = `
-            <div class="charts-empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-width="2"/>
-                </svg>
-                <h3>Colonnes manquantes</h3>
-                <p>Pour générer les graphiques, le fichier doit contenir des colonnes explicites :<br>
-                <strong>"CA Réalisé"</strong> et <strong>"Objectif"</strong>.</p>
-                <p class="text-secondary text-sm">Colonnes détectées : ${headers.join(', ')}</p>
-            </div>
-        `;
+        // Suppress error for likely junk/empty sheets (common in Excel files like 'Feuil1')
+        console.warn(`[Charts] Skipping sheet '${sheet.name}': Missing CA/Objectif columns.`);
+
+        // Only show message if it looks like a legitimate data sheet (enough rows/cols) but failed detection
+        if (sheet.data.length > 5 && sheet.data[0].length > 2) {
+            container.innerHTML = `
+                <div class="charts-empty-state" style="background: #f8f9fa; border: 1px dashed #ced4da; color: #6c757d;">
+                    <h3 style="font-size: 14px; margin: 0;">Données non reconnues pour '${sheet.name}'</h3>
+                    <p style="font-size: 12px; margin: 5px 0 0 0;">Colonnes CA/Objectif introuvables. Vérifiez les en-têtes.</p>
+                </div>
+            `;
+        } else {
+            // Silent skip for empty/irrelevant sheets
+            container.style.display = 'none';
+        }
         return;
     }
 
@@ -336,11 +499,17 @@ function renderStoreCharts(sheet, container, sheetIndex) {
         storeName = String(storeName || '').trim();
 
         // Skip "Ligne X" or empty names
-        if (!storeName || /ligne\s*\d+/i.test(storeName)) return;
+        if (!storeName || /ligne\s*\d+/i.test(storeName)) {
+            console.log('Skipping row (Invalid Name):', rowIndex, storeName);
+            return;
+        }
 
         // Skip Metadata/Header rows disguised as stores
         const lowerName = storeName.toLowerCase();
-        if (['objectif', 'total', 'ca realise', 'ca réalisé', '% de realisation', '% de réalisation', 'moyenne'].some(k => lowerName.includes(k))) return;
+        if (['objectif', 'total', 'ca realise', 'ca réalisé', '% de realisation', '% de réalisation', 'moyenne'].some(k => lowerName.includes(k))) {
+            console.log('Skipping row (Metadata name):', rowIndex, storeName);
+            return;
+        }
 
         // Extract Values
         const getVal = (idx) => {
@@ -363,7 +532,7 @@ function renderStoreCharts(sheet, container, sheetIndex) {
             percent = (ca / obj) * 100;
             percentLabel = percent.toFixed(1) + '%';
         } else {
-            percent = 0;
+            percent = 0; // Avoid division by zero
         }
 
         chartsGenerated++;
@@ -381,11 +550,12 @@ function renderStoreCharts(sheet, container, sheetIndex) {
         header.innerHTML = `
             <h3 class="store-name" title="${storeName}">${storeName}</h3>
             <div class="store-metrics">
-                <span class="badge ${percent >= 100 ? 'badge-success' : 'badge-warning'}">
-                    % Réal: ${percentLabel}
+                <span class="badge ${percent >= 100 ? 'badge-success' : 'badge-warning'}" title="Taux de réalisation">
+                    % de réalisation : ${percentLabel}
                 </span>
             </div>
         `;
+
         card.appendChild(header);
 
         // Canvas
@@ -394,7 +564,7 @@ function renderStoreCharts(sheet, container, sheetIndex) {
         canvasWrapper.style.height = '300px';
 
         const canvas = document.createElement('canvas');
-        canvas.id = `store-chart-${sheetIndex}-${rowIndex}`;
+        canvas.id = `store - chart - ${sheetIndex} -${rowIndex} `;
         canvasWrapper.appendChild(canvas);
         card.appendChild(canvasWrapper);
         storeChartsContainer.appendChild(card);
@@ -406,7 +576,7 @@ function renderStoreCharts(sheet, container, sheetIndex) {
         const chart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['CA Réalisé', 'Objectif'],
+                labels: ['CA', 'Objectif'],
                 datasets: [
                     {
                         label: 'Montant (€)',
@@ -420,75 +590,73 @@ function renderStoreCharts(sheet, container, sheetIndex) {
                             'rgba(54, 162, 235, 1)'
                         ],
                         borderWidth: 1,
-                        yAxisID: 'y',
-                        order: 2
-                    },
-                    {
-                        label: '% Réalisation',
-                        type: 'line',
-                        data: [percent, percent],
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderWidth: 2,
-                        pointRadius: 4,
-                        yAxisID: 'y1',
-                        order: 1,
-                        borderDash: [5, 5]
+                        borderRadius: 4,
+                        maxBarThickness: 50
                     }
                 ]
             },
             options: {
                 responsive: true,
+                resizeDelay: 200, // Debounce resize events
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: true },
+                    legend: { display: false }, // Hide legend to save space
                     tooltip: {
                         callbacks: {
                             label: (ctx) => {
                                 let label = ctx.dataset.label || '';
                                 if (label) label += ': ';
-                                if (ctx.dataset.yAxisID === 'y1') {
-                                    return label + ctx.raw.toFixed(1) + '%';
-                                }
                                 return label + new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(ctx.raw);
                             }
                         }
                     }
                 },
                 scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: 'Montant (€)' },
-                        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: { display: true, text: '% Réalisation' },
-                        grid: { drawOnChartArea: false },
-                        suggestedMax: 120, // Give some headroom
-                        suggestedMin: 0
-                    },
                     x: {
-                        grid: { display: false }
+                        grid: { display: false },
+                        ticks: { font: { weight: 'bold' }, autoSkip: false } // Force labels
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: function (value) {
+                                return new Intl.NumberFormat('fr-FR', { notation: "compact", compactDisplay: "short" }).format(value) + ' €';
+                            }
+                        }
                     }
                 }
             }
         });
+
         autoCharts.push(chart);
     });
 
+    console.log('Total charts generated:', chartsGenerated);
     if (chartsGenerated === 0) {
         container.innerHTML = `
-            <div class="charts-empty-state">
+            < div class="charts-empty-state" >
                 <h3>Aucune donnée valide trouvée</h3>
                 <p>Vérifiez les noms des magasins et les valeurs numériques.</p>
-            </div>
-        `;
+            </div >
+            `;
     } else {
+        // Check if any charts were actually generated
+        if (chartsGenerated === 0) {
+            container.innerHTML = `
+            < div class="charts-empty-state" >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/>
+                </svg>
+                <h3>Aucune donnée valide</h3>
+                <p>Les colonnes ont été trouvées, mais aucune ligne de donnée n'a pu être extraite.</p>
+                <p class="text-secondary text-sm">Vérifiez le contenu de vos cellules.</p>
+            </div >
+            `;
+            return;
+        }
+
+        container.innerHTML = ''; // FIX: Clear previous content to prevent infinite duplication
         container.appendChild(storeChartsContainer);
     }
 }
@@ -562,7 +730,8 @@ function filterAndSortCharts(searchTerm, sortBy) {
     const sections = document.querySelectorAll('.sheet-charts-section');
     sections.forEach(section => {
         const visibleCards = section.querySelectorAll('.chart-card:not([style*="display: none"])');
-        section.style.display = visibleCards.length > 0 ? 'block' : 'none';
+        const hasError = section.querySelector('.charts-empty-state');
+        section.style.display = (visibleCards.length > 0 || hasError) ? 'block' : 'none';
     });
 
 

@@ -96,9 +96,36 @@ function createWindow() {
         return { success: true };
     });
 
-    // DEBUG: Remote Logging
-    ipcMain.on('log', (event, message) => {
-        console.log('[RENDERER]', message);
+    // DEBUG & Client Logging
+    ipcMain.on('log', (event, data) => {
+        const { level, message } = data;
+        const formattedMessage = `[RENDERER] ${message}`;
+
+        // Log to console for dev
+        console.log(formattedMessage);
+
+        // Log to file using electron-log
+        if (level === 'error') {
+            log.error(formattedMessage);
+        } else if (level === 'warn') {
+            log.warn(formattedMessage);
+        } else {
+            log.info(formattedMessage);
+        }
+    });
+
+    ipcMain.handle('open-logs-path', async () => {
+        const { shell } = require('electron');
+        const logPath = log.transports.file.getFile().path;
+        const logDir = path.dirname(logPath);
+
+        try {
+            await shell.openPath(logDir);
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to open logs path:', error);
+            return { success: false, error: error.message };
+        }
     });
 
     mainWindow.on('closed', () => {

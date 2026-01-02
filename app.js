@@ -566,6 +566,14 @@ function initializeEventListeners() {
             window.electronAPI.closeWindow();
         });
 
+        // Activation Screen Window Controls
+        document.getElementById('minimize-activation-btn')?.addEventListener('click', () => {
+            window.electronAPI.minimizeWindow();
+        });
+        document.getElementById('close-activation-btn')?.addEventListener('click', () => {
+            window.electronAPI.closeWindow();
+        });
+
         // Folder selection
         document.getElementById('select-folder-btn')?.addEventListener('click', async () => {
             if (typeof dashboardController !== 'undefined') {
@@ -576,6 +584,19 @@ function initializeEventListeners() {
         document.getElementById('change-folder-btn')?.addEventListener('click', async () => {
             if (typeof dashboardController !== 'undefined') {
                 await dashboardController.changeFolder();
+            }
+        });
+
+        document.getElementById('view-logs-btn')?.addEventListener('click', async () => {
+            if (window.electronAPI && window.electronAPI.openLogsPath) {
+                const result = await window.electronAPI.openLogsPath();
+                if (!result.success) {
+                    if (typeof dashboardController !== 'undefined') {
+                        dashboardController.showNotification(`Erreur lors de l'ouverture des logs: ${result.error}`, 'error');
+                    } else {
+                        alert(`Erreur lors de l'ouverture des logs: ${result.error}`);
+                    }
+                }
             }
         });
     }
@@ -731,29 +752,29 @@ function renderRows(startDataRowIndex, count) {
                         // Excel ARGB is FF RRGGBB -> CSS #RRGGBB
                         let hexColor = cellStyle.font.color.argb.substring(2);
 
-                        // Fix for Dark Mode: If text is black/dark and background is transparent (default), invert to white
-                        // Check if Dark Mode is active
+                        // Contrast Safety Check
                         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                        // Fix: background is only real if not transparent and not 'none' pattern
+                        const isTransparent = (cellStyle.fill && cellStyle.fill.fgColor && cellStyle.fill.fgColor.argb && cellStyle.fill.fgColor.argb.startsWith('00'));
+                        const isNone = (cellStyle.fill && cellStyle.fill.pattern === 'none');
+                        const hasBackground = cellStyle.fill && cellStyle.fill.fgColor && !isTransparent && !isNone;
 
-                        // Check if an explicit background is set?
-                        // If cellStyle.fill is set, we let the contrast logic handle it (or this color overrides it?)
-                        // Actually, lines 730-733 only run if NO font color is set.
-                        // Here, a font color IS set.
-
-                        // If background is NOT set (transparent -> dark app bg), and text is dark, we must invert.
-                        const hasBackground = cellStyle.fill && cellStyle.fill.fgColor;
-
+                        // 1. Dark Mode Handling: Invert dark text on transparent background
                         if (isDark && !hasBackground) {
-                            // Convert to RGB to check brightness
                             const r = parseInt(hexColor.substr(0, 2), 16);
                             const g = parseInt(hexColor.substr(2, 2), 16);
                             const b = parseInt(hexColor.substr(4, 2), 16);
                             const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                            if (brightness < 128) hexColor = 'e8eaed'; // Force white if text is dark
+                        }
 
-                            // If very dark text on dark background -> Force White
-                            if (brightness < 100) {
-                                hexColor = 'e8eaed'; // Light gray/white
-                            }
+                        // 2. Light Mode Safety
+                        if (!isDark && !hasBackground) {
+                            const r = parseInt(hexColor.substr(0, 2), 16);
+                            const g = parseInt(hexColor.substr(2, 2), 16);
+                            const b = parseInt(hexColor.substr(4, 2), 16);
+                            const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                            if (brightness > 200) hexColor = '1a1a1a'; // Force black if text is too light
                         }
 
                         td.style.color = `#${hexColor}`;
@@ -777,47 +798,56 @@ function renderRows(startDataRowIndex, count) {
                 }
 
                 // INTELLIGENT CONTRAST FIX (Robust)
-                // Check theme
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-
-                // Get effective text color (default to Black if not set, or extract from style)
-                let txtColor = '000000';
-                if (cellStyle.font && cellStyle.font.color && cellStyle.font.color.argb) {
-                    txtColor = cellStyle.font.color.argb.substring(2);
-                }
-
-                // Get effective background color (default to White if Light Mode, Dark if Dark Mode)
-                // If explicit bgColor found above, use it.
-                // Else use theme default.
                 const effectiveBg = bgColor ? bgColor : (isDark ? '1a1a1a' : 'ffffff');
 
-                // Calculate Brightness (0-255)
+                // Determine effecitve text color (use what we set above or default)
+                // Fix: ensure we handle 'rgb' or 'rgba' if browser converts it, though usually we set hex
+                const currentTextColor = td.style.color || (isDark ? '#e8eaed' : '#1a1a1a');
+                let hexText = currentTextColor;
+
+                if (hexText.startsWith('#')) hexText = hexText.substring(1);
+                else if (hexText === 'white') hexText = 'ffffff';
+                else if (hexText === 'black') hexText = '000000';
+                else if (hexText.startsWith('rgb')) {
+                    // Quick parse for rgb(r, g, b)
+                    const rgb = hexText.match(/\d+/g);
+                    if (rgb && rgb.length >= 3) {
+                        const r = parseInt(rgb[0]).toString(16).padStart(2, '0');
+                        const g = parseInt(rgb[1]).toString(16).padStart(2, '0');
+                        const b = parseInt(rgb[2]).toString(16).padStart(2, '0');
+                        hexText = r + g + b;
+                    }
+                }
+
                 const getBrightness = (hex) => {
-                    if (!hex) return 0;
+                    if (!hex || hex === 'initial' || hex === 'inherit') return isDark ? 255 : 0; // Fallback
+                    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
                     const r = parseInt(hex.substr(0, 2), 16) || 0;
                     const g = parseInt(hex.substr(2, 2), 16) || 0;
                     const b = parseInt(hex.substr(4, 2), 16) || 0;
                     return ((r * 299) + (g * 587) + (b * 114)) / 1000;
                 };
 
-                const txtB = getBrightness(txtColor);
+                const txtB = getBrightness(hexText);
                 const bgB = getBrightness(effectiveBg);
 
-                // If Contrast is poor (both dark or both light)
-                // Threshold increased to 125 to ensure strict readability (prevent light gray on white)
-                if (Math.abs(txtB - bgB) < 125) {
-                    // Conflict!
+                // If Contrast is poor (< 120 diff) -> Increased sensitivity to 120
+                if (Math.abs(txtB - bgB) < 120) {
+                    // Conflict! Enforce visibility
                     if (bgB < 128) {
-                        // Background is Dark -> Force Text White
-                        td.style.color = '#e8eaed';
+                        td.style.color = '#e8eaed'; // Dark BG -> White Text
                     } else {
-                        // Background is Light -> Force Text Black
-                        td.style.color = '#1a1a1a';
+                        td.style.color = '#1a1a1a'; // Light BG -> Black Text
                     }
                 }
-                // Also specifically catch the "Black text on Dark Theme Default BG" case
-                // which might slip through if 'effectiveBg' isn't perfect
-                if (isDark && !bgColor && txtB < 50) {
+
+                // ULTIMATE SAFEGUARD: If Light Mode and No Background (White), FORCE dark text if it looks light
+                if (!isDark && !bgColor && txtB > 200) {
+                    td.style.color = '#1a1a1a';
+                }
+                // ULTIMATE SAFEGUARD: If Dark Mode and No Background (Dark), FORCE light text if it looks dark
+                if (isDark && !bgColor && txtB < 100) {
                     td.style.color = '#e8eaed';
                 }
 
@@ -1845,3 +1875,66 @@ function clearCellContent() {
         }
     }
 }
+
+// --- SHEET TABS (Bottom Bar) ---
+window.renderSheetTabs = function (sheets) {
+    try {
+        if (!sheets || !Array.isArray(sheets) || sheets.length === 0) return;
+
+        // 1. Find or Create Container
+        let container = document.getElementById('sheet-tabs-container');
+        if (!container) {
+            // Try to insert after table-wrapper inside table-container
+            const tableContainer = document.querySelector('.table-container');
+            if (tableContainer) {
+                container = document.createElement('div');
+                container.id = 'sheet-tabs-container';
+                container.className = 'sheet-tabs-container';
+                tableContainer.appendChild(container);
+            } else {
+                // Fallback: append to data-section
+                const dataSection = document.getElementById('data-section');
+                if (dataSection) {
+                    container = document.createElement('div');
+                    container.id = 'sheet-tabs-container';
+                    container.className = 'sheet-tabs-container';
+                    dataSection.appendChild(container);
+                }
+            }
+        }
+
+        if (!container) {
+            console.error('[SheetTabs] Failed to create container');
+            return;
+        }
+
+        console.log('[SheetTabs] Rendering tabs into container:', container.id);
+
+        // 2. Clear and Render
+        container.innerHTML = '';
+
+        // Ensure global state
+        window.allSheets = sheets;
+
+        sheets.forEach((sheet, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'sheet-tab';
+            btn.textContent = sheet.name || `Feuille ${index + 1}`;
+
+            // Active State
+            if (sheet.data === window.currentSheet) {
+                btn.classList.add('active');
+            }
+
+            btn.onclick = () => {
+                if (typeof switchSheet === 'function') {
+                    switchSheet(index);
+                }
+            };
+
+            container.appendChild(btn);
+        });
+    } catch (e) {
+        console.error('[SheetTabs] Critical Error rendering tabs:', e);
+    }
+};

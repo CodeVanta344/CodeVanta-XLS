@@ -1,7 +1,7 @@
 {
   "name": "excelflow",
   "productName": "ExcelFlow",
-  "version": "1.0.5",
+  "version": "2.0.3",
   "description": "Application moderne pour visualiser et manipuler des données Excel",
   "main": "main.js",
   "scripts": {
@@ -34,7 +34,8 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "logo.png"
+      "icon": "logo.png",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
       "target": "dmg",
@@ -54,6 +55,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.5.0",
+    "chart.js": "^4.5.1",
     "chokidar": "^5.0.0",
     "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",
