@@ -342,28 +342,38 @@ ipcMain.handle('remove-license', async () => {
 autoUpdater.on('checking-for-update', () => {
     log.info('Checking for update...');
     console.log('[AUTO-UPDATE] Checking for update...');
+    sendToRemoteLog({ level: 'info', message: 'Checking for update...', context: { event: 'checking-for-update' } });
 });
 
 autoUpdater.on('update-available', (info) => {
     log.info('Update available.', info);
     console.log('[AUTO-UPDATE] Update available:', info);
+    sendToRemoteLog({ level: 'info', message: `Update available: ${info.version}`, context: { event: 'update-available', info } });
     mainWindow.webContents.send('update-available');
 });
 
 autoUpdater.on('update-not-available', (info) => {
     log.info('Update not available.', info);
     console.log('[AUTO-UPDATE] No update available:', info);
+    sendToRemoteLog({ level: 'info', message: 'No update available', context: { event: 'update-not-available', info } });
 });
 
 autoUpdater.on('update-downloaded', (info) => {
     log.info('Update downloaded.', info);
     console.log('[AUTO-UPDATE] Update downloaded:', info);
+    sendToRemoteLog({ level: 'info', message: `Update downloaded: ${info.version}`, context: { event: 'update-downloaded', info } });
     mainWindow.webContents.send('update-downloaded');
 });
 
 autoUpdater.on('error', (err) => {
     log.error('Error in auto-updater:', err);
     console.error('[AUTO-UPDATE] Error:', err);
+    sendToRemoteLog({
+        level: 'error',
+        message: `Auto-updater error: ${err.message || err}`,
+        stack: err.stack,
+        context: { event: 'error' }
+    });
 });
 
 // Auto-updater IPC

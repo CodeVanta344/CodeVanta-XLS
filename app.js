@@ -1369,6 +1369,7 @@ function initializeAutoUpdater() {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+    initializeAutoUpdater();
     initializeSplashScreen();
     initializeEventListeners();
     initializeTheme();
