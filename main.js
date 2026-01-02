@@ -392,6 +392,13 @@ ipcMain.handle('quit-and-install', () => {
 app.whenReady().then(() => {
     createWindow();
 
+    // Connectivity Test
+    sendToRemoteLog({
+        level: 'info',
+        message: 'App started and testing Supabase connectivity',
+        context: { event: 'startup-test' }
+    }).then(() => console.log('[REMOTE-LOG] Startup test sent'));
+
     // Check for updates after window is ready
     setTimeout(() => {
         console.log('[AUTO-UPDATE] Starting update check...');
