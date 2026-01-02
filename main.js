@@ -14,6 +14,39 @@ autoUpdater.logger.transports.file.level = 'info';
 log.info('App starting...');
 console.log('[AUTO-UPDATE] Initializing auto-updater...');
 
+// Remote Logging Configuration
+const SUPABASE_URL = 'https://achepsojutmuctpmedxg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjaGVwc29qdXRtdWN0cG1lZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTY0NTEsImV4cCI6MjA4MTEzMjQ1MX0.MvIga1zaVsl4qADTIhHpPpaSQ99PpVitcAH0io6fVoE';
+
+async function sendToRemoteLog(logData) {
+    try {
+        // Use global fetch (available in modern Electron)
+        await fetch(`${SUPABASE_URL}/rest/v1/app_debug_logs`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                level: logData.level || 'info',
+                message: logData.message || '',
+                stack: logData.stack || null,
+                version: app.getVersion(),
+                machine_id: process.platform,
+                context: {
+                    arch: process.arch,
+                    time: logData.time,
+                    ...logData.context
+                }
+            })
+        });
+    } catch (error) {
+        console.error('[REMOTE-LOG] Error sending log:', error);
+    }
+}
+
 // Configure update feed (GitHub Releases)
 autoUpdater.setFeedURL({
     provider: 'github',
@@ -96,7 +129,7 @@ function createWindow() {
         return { success: true };
     });
 
-    // DEBUG & Client Logging
+    // DEBUG & Client Logging (Forwarded to Supabase)
     ipcMain.on('log', (event, data) => {
         const { level, message } = data;
         const formattedMessage = `[RENDERER] ${message}`;
@@ -104,27 +137,16 @@ function createWindow() {
         // Log to console for dev
         console.log(formattedMessage);
 
-        // Log to file using electron-log
+        // Log to file using electron-log for local debug if needed, 
+        // but primary focus is remote for "rouge" errors
         if (level === 'error') {
             log.error(formattedMessage);
+            sendToRemoteLog(data); // Send critical errors to remote
         } else if (level === 'warn') {
             log.warn(formattedMessage);
+            sendToRemoteLog(data); // Send warnings to remote
         } else {
             log.info(formattedMessage);
-        }
-    });
-
-    ipcMain.handle('open-logs-path', async () => {
-        const { shell } = require('electron');
-        const logPath = log.transports.file.getFile().path;
-        const logDir = path.dirname(logPath);
-
-        try {
-            await shell.openPath(logDir);
-            return { success: true };
-        } catch (error) {
-            console.error('Failed to open logs path:', error);
-            return { success: false, error: error.message };
         }
     });
 

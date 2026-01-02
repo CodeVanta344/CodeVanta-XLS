@@ -586,19 +586,6 @@ function initializeEventListeners() {
                 await dashboardController.changeFolder();
             }
         });
-
-        document.getElementById('view-logs-btn')?.addEventListener('click', async () => {
-            if (window.electronAPI && window.electronAPI.openLogsPath) {
-                const result = await window.electronAPI.openLogsPath();
-                if (!result.success) {
-                    if (typeof dashboardController !== 'undefined') {
-                        dashboardController.showNotification(`Erreur lors de l'ouverture des logs: ${result.error}`, 'error');
-                    } else {
-                        alert(`Erreur lors de l'ouverture des logs: ${result.error}`);
-                    }
-                }
-            }
-        });
     }
 }
 

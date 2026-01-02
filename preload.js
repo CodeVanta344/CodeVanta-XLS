@@ -6,7 +6,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Utilities
     getPathForFile: (file) => webUtils.getPathForFile(file),
     log: (data) => ipcRenderer.send('log', data),
-    openLogsPath: () => ipcRenderer.invoke('open-logs-path'),
 
     // Window controls
     minimizeWindow: () => ipcRenderer.send('window-minimize'),
