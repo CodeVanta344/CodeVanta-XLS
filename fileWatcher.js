@@ -15,7 +15,7 @@ class FileWatcher {
     start() {
         console.log(`Starting file watcher for: ${this.folderPath}`);
 
-        this.watcher = chokidar.watch(path.join(this.folderPath, '*.xlsx'), {
+        this.watcher = chokidar.watch(path.join(this.folderPath, '*.{xlsx,xls}'), {
             ignored: /(^|[\/\\])\../, // ignore dotfiles
             persistent: true,
             ignoreInitial: false, // Process existing files on start

@@ -145,6 +145,9 @@ class DataExtractor {
                 }
             });
 
+            // Automatically export to CSV
+            await this.exportToCSV(workbook, filePath);
+
             if (sheets.length === 0) {
                 return { success: false, error: 'No content found in Excel file' };
             }
@@ -332,6 +335,41 @@ class DataExtractor {
             colIndex = Math.floor((colIndex) / 26) - 1;
         }
         return letter;
+    }
+
+    async exportToCSV(workbook, sourceFilePath) {
+        try {
+            const baseDir = path.dirname(sourceFilePath);
+            const baseName = path.basename(sourceFilePath, path.extname(sourceFilePath));
+
+            console.log(`[CSV-EXPORT] Exporting ${baseName} to CSV...`);
+
+            for (const worksheet of workbook.worksheets) {
+                // Skip empty or hidden sheets if desired? For now, export all named sheets
+                if (worksheet.rowCount === 0) continue;
+
+                let csvPath;
+                if (workbook.worksheets.length === 1 || worksheet.name === workbook.worksheets[0].name) {
+                    csvPath = path.join(baseDir, `${baseName}.csv`);
+                } else {
+                    csvPath = path.join(baseDir, `${baseName}-${worksheet.name}.csv`);
+                }
+
+                // Simple CSV Generation using ExcelJS integrated CSV writer
+                // Using .csv.writeFile directly is efficient
+                await workbook.csv.writeBuffer({
+                    sheetId: worksheet.id,
+                    encoding: 'utf8',
+                    dateFormat: 'YYYY-MM-DD HH:mm:ss'
+                }).then(buffer => {
+                    fs.writeFileSync(csvPath, buffer);
+                });
+
+                console.log(`[CSV-EXPORT] Saved: ${path.basename(csvPath)}`);
+            }
+        } catch (error) {
+            console.error('[CSV-EXPORT] Error exporting to CSV:', error);
+        }
     }
 }
 
