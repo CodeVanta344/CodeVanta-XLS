@@ -213,21 +213,9 @@ class LicenseManager {
     }
 
     async deactivateLicense() {
-        const confirmed = confirm('Êtes-vous sûr de vouloir désactiver cette licence ?');
-        if (!confirmed) return;
-
-        // Stop automatic verification
-        this.stopAutoVerification();
-
-        await window.electronAPI.removeLicense();
-        this.licenseKey = null;
-        this.isActivated = false;
-
-        window.toast?.info('Licence désactivée');
-        this.showActivationScreen();
-
-        // Recharger pour être propre
-        setTimeout(() => location.reload(), 1000);
+        // Disabled at user request to prevent clients from deactivating their own keys.
+        console.warn('License deactivation is disabled from the client interface.');
+        return;
     }
 
     async getLicenseInfo() {
