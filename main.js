@@ -88,8 +88,7 @@ function createWindow() {
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
 
-        // TEMPORAIRE: Ouvrir DevTools pour déboguer l'auto-update
-        mainWindow.webContents.openDevTools();
+        // mainWindow.webContents.openDevTools();
 
         // Vérifier si un dossier est configuré
         const watchFolder = store.get('watchFolder');
